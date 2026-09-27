@@ -109,4 +109,6 @@ skyward/
 
 ## License & Contributing
 
-Built for the World of Warcraft Forever community. Issues and contributions are welcome via [GitHub Issues and Pull Requests](https://github.com/ChrisKneller/skyward).
+Copyright © 2026 Christian Kneller. All rights reserved. See [LICENSE](LICENSE) for details.
+
+Issues, bug reports, and contributions are welcome via [GitHub Issues and Pull Requests](https://github.com/ChrisKneller/skyward).
