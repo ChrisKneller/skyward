@@ -2,7 +2,7 @@
 ## Title: |cff00b4d8Skyward|r
 ## Notes: Filters and mitigates interactions with the Skyborne race in World of Warcraft Forever.
 ## Author: Christian Kneller
-## Version: 0.1.1
+## Version: 0.1.2
 ## SavedVariables: SkywardDB
 ## IconTexture: Interface\Icons\Spell_Nature_AeroShield
 
