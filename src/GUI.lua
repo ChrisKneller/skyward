@@ -1,7 +1,7 @@
 --[[
     Skyward: In-Game Configuration Panel
     Standalone UI frame accessible via /skyward, /sw, /sky
-    Includes General (Mode/Whitelist), Channels, and Styling tabs with live preview.
+    Tabs: General (Mode / Whitelist), Channels, and Styling (Appearance & Live Preview).
 ]]
 
 local ADDON_NAME, Skyward = ...
@@ -26,11 +26,11 @@ local channelCheckboxes = {}
 local channelStatusText = nil
 
 -- Styling Tab UI references
+local tagCheckbox = nil
 local tagInput = nil
 local dimWholeLineCheckbox = nil
 local colorPresetButtons = {}
 local opacityPresetButtons = {}
-local styleButtons = {}
 local previewText = nil
 
 -- Helper to create standard styled buttons
@@ -140,26 +140,28 @@ local function UpdateLivePreview()
     if not previewText then return end
 
     local dimColor = Skyward:GetMarkColorCode()
+    local showTag = Skyward:IsTagEnabled()
     local tag = Skyward:GetMarkTag()
-    local markStyle = (Skyward.db and Skyward.db.markStyle) or "DIM"
     local dimWhole = Skyward:IsDimWholeLine()
 
     local sampleMsg = "Greetings mortals, the Skyborne have taken flight!"
-    local formattedMsg = sampleMsg
-    if markStyle == "STRIKE" then
-        formattedMsg = "~~ " .. sampleMsg .. " ~~"
-    end
+    local tagStr = (showTag and tag and tag ~= "") and (tag .. " ") or ""
 
-    local tagStr = (tag ~= "") and (tag .. " ") or ""
-
-    if dimWhole then
-        local line = ("[2. Trade - English] [Mahzzi Ttvv]: %s%s"):format(tagStr, formattedMsg)
-        previewText:SetText(dimColor .. line .. "|r")
+    if dimColor then
+        if dimWhole then
+            local line = ("[2. Trade - English] [Moon Ray]: %s%s"):format(tagStr, sampleMsg)
+            previewText:SetText(dimColor .. line .. "|r")
+        else
+            local channelPart = "|cffff8040[2. Trade - English]|r"
+            local authorPart = "|cffff7c0a[Moon Ray]|r"
+            local msgPart = dimColor .. tagStr .. sampleMsg .. "|r"
+            previewText:SetText(("%s %s: %s"):format(channelPart, authorPart, msgPart))
+        end
     else
+        -- Regular color selected: normal Trade channel orange and player class color
         local channelPart = "|cffff8040[2. Trade - English]|r"
-        local authorPart = "|cffff7c0a[Mahzzi Ttvv]|r"
-        local msgPart = dimColor .. tagStr .. formattedMsg .. "|r"
-        previewText:SetText(("%s %s: %s"):format(channelPart, authorPart, msgPart))
+        local authorPart = "|cffff7c0a[Moon Ray]|r"
+        previewText:SetText(("%s %s: %s%s"):format(channelPart, authorPart, tagStr, sampleMsg))
     end
 end
 
@@ -198,7 +200,7 @@ function Skyward:UpdateGUI()
         if currentMode == Skyward.MODES.OFF then
             statusText:SetText("Status: |cff808080Filter Off (All Messages Shown)|r")
         elseif currentMode == Skyward.MODES.MARKED then
-            statusText:SetText("Status: |cff90e0efDimmed (Skyborne Messages Marked)|r")
+            statusText:SetText("Status: |cff90e0efStyled (Skyborne Messages Filtered & Styled)|r")
         elseif currentMode == Skyward.MODES.HIDE then
             statusText:SetText("Status: |cffff4d4dBlocked (Skyborne Messages Hidden)|r")
         end
@@ -226,6 +228,9 @@ function Skyward:UpdateGUI()
     if dimWholeLineCheckbox then
         dimWholeLineCheckbox:SetChecked(self:IsDimWholeLine())
     end
+    if tagCheckbox then
+        tagCheckbox:SetChecked(self:IsTagEnabled())
+    end
     if tagInput and not tagInput:HasFocus() then
         tagInput:SetText(self:GetMarkTag())
     end
@@ -244,16 +249,6 @@ function Skyward:UpdateGUI()
     local currentAlpha = (self.db and self.db.markOpacity) or "cc"
     for alpha, btn in pairs(opacityPresetButtons) do
         if alpha == currentAlpha then
-            btn:LockHighlight()
-        else
-            btn:UnlockHighlight()
-        end
-    end
-
-    -- Update Style Buttons Highlights
-    local currentStyle = (self.db and self.db.markStyle) or "DIM"
-    for sKey, btn in pairs(styleButtons) do
-        if sKey == currentStyle then
             btn:LockHighlight()
         else
             btn:UnlockHighlight()
@@ -364,7 +359,7 @@ function GUI:CreateMainFrame()
 
     local modes = {
         { id = Skyward.MODES.OFF, label = "Off (Normal)", width = 135 },
-        { id = Skyward.MODES.MARKED, label = "Dimmed / Marked", width = 145 },
+        { id = Skyward.MODES.MARKED, label = "Styled", width = 145 },
         { id = Skyward.MODES.HIDE, label = "Hide (Block)", width = 135 },
     }
 
@@ -392,7 +387,7 @@ function GUI:CreateMainFrame()
 
     local wlDesc = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     wlDesc:SetPoint("TOPLEFT", wlHeader, "BOTTOMLEFT", 0, -2)
-    wlDesc:SetText("Whitelisted players are never filtered or dimmed, even if they play Skyborne.")
+    wlDesc:SetText("Whitelisted players are never filtered, even if they play Skyborne.")
 
     nameInput = CreateFrame("EditBox", "SkywardWhitelistInput", tabGeneral, "InputBoxTemplate")
     nameInput:SetSize(280, 24)
@@ -529,7 +524,7 @@ function GUI:CreateMainFrame()
 
     local stHeader = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     stHeader:SetPoint("TOPLEFT", tabStyling, "TOPLEFT", 0, -2)
-    stHeader:SetText("Marked Skyborne Message Appearance:")
+    stHeader:SetText("Styled Skyborne Message Appearance:")
 
     local stSub = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     stSub:SetPoint("TOPLEFT", stHeader, "BOTTOMLEFT", 0, -3)
@@ -542,14 +537,16 @@ function GUI:CreateMainFrame()
     end)
     dimWholeLineCheckbox:SetPoint("TOPLEFT", stSub, "BOTTOMLEFT", 2, -10)
 
-    -- 2. Message Prefix Tag Input
-    local tagLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    tagLabel:SetPoint("TOPLEFT", dimWholeLineCheckbox, "BOTTOMLEFT", 4, -12)
-    tagLabel:SetText("Message Prefix Tag:")
+    -- 2. Prefix Tag Toggle & Input Box
+    tagCheckbox = CreateCheckbox(tabStyling, "Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
+        Skyward:SetTagEnabled(isChecked)
+        UpdateLivePreview()
+    end)
+    tagCheckbox:SetPoint("TOPLEFT", dimWholeLineCheckbox, "BOTTOMLEFT", 0, -8)
 
     tagInput = CreateFrame("EditBox", "SkywardTagInput", tabStyling, "InputBoxTemplate")
     tagInput:SetSize(180, 22)
-    tagInput:SetPoint("LEFT", tagLabel, "RIGHT", 12, 0)
+    tagInput:SetPoint("LEFT", tagCheckbox.Label, "RIGHT", 12, 0)
     tagInput:SetAutoFocus(false)
     tagInput:SetMaxLetters(30)
     tagInput:SetText(Skyward:GetMarkTag())
@@ -558,28 +555,32 @@ function GUI:CreateMainFrame()
         UpdateLivePreview()
     end)
 
-    -- 3. Color Presets
+    -- 3. Color Theme Presets (2 rows of 3 buttons)
     local colorLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    colorLabel:SetPoint("TOPLEFT", tagLabel, "BOTTOMLEFT", 0, -18)
+    colorLabel:SetPoint("TOPLEFT", tagCheckbox, "BOTTOMLEFT", 4, -14)
     colorLabel:SetText("Color Theme:")
 
     local colorContainer = CreateFrame("Frame", nil, tabStyling)
-    colorContainer:SetSize(434, 26)
+    colorContainer:SetSize(434, 56)
     colorContainer:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -4)
 
-    local cX = 0
-    for _, preset in ipairs(Skyward.MARK_COLOR_PRESETS or {}) do
-        local btn = CreateStyledButton(colorContainer, "|cff" .. preset.hex .. preset.label .. "|r", 82, 22)
-        btn:SetPoint("TOPLEFT", colorContainer, "TOPLEFT", cX, 0)
+    for idx, preset in ipairs(Skyward.MARK_COLOR_PRESETS or {}) do
+        local row = (idx <= 3) and 0 or 1
+        local col = (idx <= 3) and (idx - 1) or (idx - 4)
+        local btnX = col * 144
+        local btnY = - (row * 28)
+
+        local btnText = (preset.hex == "REGULAR") and "|cffffffffRegular|r" or ("|cff" .. preset.hex .. preset.label .. "|r")
+        local btn = CreateStyledButton(colorContainer, btnText, 138, 24)
+        btn:SetPoint("TOPLEFT", colorContainer, "TOPLEFT", btnX, btnY)
         btn:SetScript("OnClick", function()
             Skyward:SetMarkColor(preset.hex)
             Skyward:UpdateGUI()
         end)
         colorPresetButtons[preset.hex] = btn
-        cX = cX + 86
     end
 
-    -- 4. Text Opacity (Alpha Transparency)
+    -- 4. Text Opacity (6 buttons across)
     local opacityLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     opacityLabel:SetPoint("TOPLEFT", colorContainer, "BOTTOMLEFT", 0, -10)
     opacityLabel:SetText("Text Opacity (Transparency):")
@@ -590,46 +591,19 @@ function GUI:CreateMainFrame()
 
     local oX = 0
     for _, op in ipairs(Skyward.OPACITY_PRESETS or {}) do
-        local btn = CreateStyledButton(opacityContainer, op.label, 82, 22)
+        local btn = CreateStyledButton(opacityContainer, op.label, 68, 22)
         btn:SetPoint("TOPLEFT", opacityContainer, "TOPLEFT", oX, 0)
         btn:SetScript("OnClick", function()
             Skyward:SetMarkOpacity(op.alphaHex)
             Skyward:UpdateGUI()
         end)
         opacityPresetButtons[op.alphaHex] = btn
-        oX = oX + 86
+        oX = oX + 73
     end
 
-    -- 5. Visual Mode (Dim / Strike / Tag)
-    local vStyleLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    vStyleLabel:SetPoint("TOPLEFT", opacityContainer, "BOTTOMLEFT", 0, -10)
-    vStyleLabel:SetText("Text Decorator Style:")
-
-    local vStyleContainer = CreateFrame("Frame", nil, tabStyling)
-    vStyleContainer:SetSize(434, 26)
-    vStyleContainer:SetPoint("TOPLEFT", vStyleLabel, "BOTTOMLEFT", 0, -4)
-
-    local styleOptions = {
-        { id = "DIM", label = "Greyed Out", width = 100 },
-        { id = "STRIKE", label = "Strikethrough", width = 110 },
-        { id = "TAG", label = "Tag Only", width = 90 },
-    }
-
-    local sX = 0
-    for _, s in ipairs(styleOptions) do
-        local btn = CreateStyledButton(vStyleContainer, s.label, s.width, 22)
-        btn:SetPoint("TOPLEFT", vStyleContainer, "TOPLEFT", sX, 0)
-        btn:SetScript("OnClick", function()
-            Skyward.db.markStyle = s.id
-            Skyward:UpdateGUI()
-        end)
-        styleButtons[s.id] = btn
-        sX = sX + s.width + 10
-    end
-
-    -- 6. Live Preview Box
+    -- 5. Live Preview Box
     local previewLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    previewLabel:SetPoint("TOPLEFT", vStyleContainer, "BOTTOMLEFT", 0, -12)
+    previewLabel:SetPoint("TOPLEFT", opacityContainer, "BOTTOMLEFT", 0, -16)
     previewLabel:SetText("Live Chat Preview:")
 
     local previewBox = CreateFrame("Frame", nil, tabStyling, backdropTemplate)

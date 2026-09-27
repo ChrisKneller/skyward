@@ -75,10 +75,21 @@ function Skyward:InitDatabase()
         end
     end
 
+    -- Migrate old Zephyr-Skyward to Zephyr Skyward
+    if SkywardDB.whitelist["zephyr-skyward"] then
+        SkywardDB.whitelist["zephyr-skyward"] = nil
+        SkywardDB.whitelist["zephyr skyward"] = { name = "Zephyr Skyward", addedAt = time() }
+    end
+    if SkywardDB.whitelist["aeloria-skyward"] then
+        SkywardDB.whitelist["aeloria-skyward"] = nil
+        SkywardDB.whitelist["aeloria skyward"] = { name = "Aeloria Skyward", addedAt = time() }
+    end
+
     -- Ensure styling defaults exist
     if SkywardDB.markColor == nil then SkywardDB.markColor = "777b80" end
     if SkywardDB.markOpacity == nil then SkywardDB.markOpacity = "cc" end
     if SkywardDB.markTag == nil then SkywardDB.markTag = "[Skyborne]" end
+    if SkywardDB.showTag == nil then SkywardDB.showTag = true end
     if SkywardDB.dimWholeLine == nil then SkywardDB.dimWholeLine = true end
 
     self.db = SkywardDB
@@ -118,8 +129,23 @@ end
 -- Marking Style & Appearance State Helpers
 function Skyward:GetMarkColorCode()
     local color = (self.db and self.db.markColor) or "777b80"
+    if color == "REGULAR" then
+        return nil
+    end
     local opacity = (self.db and self.db.markOpacity) or "cc"
     return "|c" .. opacity .. color
+end
+
+function Skyward:IsTagEnabled()
+    if not self.db or self.db.showTag == nil then
+        return true
+    end
+    return self.db.showTag == true
+end
+
+function Skyward:SetTagEnabled(enabled)
+    if not self.db then return end
+    self.db.showTag = enabled and true or false
 end
 
 function Skyward:GetMarkTag()
@@ -157,7 +183,6 @@ function Skyward:SetDimWholeLine(enabled)
 end
 
 
-
 -- Get current filter mode ("OFF", "MARKED", "HIDE")
 function Skyward:GetMode()
     if not self.db then return Skyward.MODES.OFF end
@@ -169,7 +194,8 @@ function Skyward:SetMode(newMode)
     if not self.db then return end
     if newMode == Skyward.MODES.OFF or newMode == Skyward.MODES.MARKED or newMode == Skyward.MODES.HIDE then
         self.db.mode = newMode
-        self:Print(("Public chat filter mode set to: |cffffd100%s|r"):format(newMode))
+        local displayMode = (newMode == Skyward.MODES.MARKED) and "STYLED" or newMode
+        self:Print(("Public chat filter mode set to: |cffffd100%s|r"):format(displayMode))
         if self.UpdateGUI then
             self:UpdateGUI()
         end

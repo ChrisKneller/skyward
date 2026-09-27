@@ -38,29 +38,26 @@ function Skyward:GetChannelKey(event, channelString, zoneChannelID, channelBaseN
     return "OTHER"
 end
 
--- Format a message for "MARKED" mode (greyed out / custom color / strikethrough / prefix)
+-- Format a message for "MARKED" (STYLED) mode
 function Skyward:FormatMarkedMessage(msg)
     if not msg then return msg end
 
     local dimColor = self:GetMarkColorCode()
+    local showTag = self:IsTagEnabled()
     local customTag = self:GetMarkTag()
     local tag = ""
-    if customTag and customTag ~= "" then
+    if showTag and customTag and customTag ~= "" then
         tag = customTag .. " "
     end
 
-    -- Preserve clickable links by ensuring resets return to our dim color
-    local dimmedMsg = msg:gsub("|r", "|r" .. dimColor)
-
-    local markStyle = (self.db and self.db.markStyle) or "DIM"
     local formatted = ""
-    if markStyle == "STRIKE" then
-        formatted = tag .. dimColor .. "~~ " .. dimmedMsg .. " ~~|r"
-    elseif markStyle == "TAG" then
-        formatted = tag .. msg
-    else
-        -- Default: "DIM"
+    if dimColor then
+        -- Preserve clickable links by ensuring resets return to our dim color
+        local dimmedMsg = msg:gsub("|r", "|r" .. dimColor)
         formatted = tag .. dimColor .. dimmedMsg .. "|r"
+    else
+        -- Regular text color
+        formatted = tag .. msg
     end
 
     -- Include invisible marker tag so AddMessage hook knows to recolor the entire line if enabled
@@ -72,8 +69,15 @@ local function RecolorWholeLine(text, dimColor)
     if not text then return text end
     -- Remove the invisible detection marker
     local clean = text:gsub("|c00010203|r", "")
-    -- Replace all color codes (|caarrggbb or |crrggbb) with our chosen dimColor
-    local recolored = clean:gsub("|c%x%x%x%x%x%x%x%x", dimColor):gsub("|c%x%x%x%x%x%x", dimColor)
+
+    -- If Regular text color is selected, don't recolor the line
+    if not dimColor then
+        return clean
+    end
+
+    -- Replace all 8-digit color codes (|caarrggbb) with our chosen dimColor.
+    -- Crucial: ONLY match exact 8 hex digits once to avoid substring re-matching bugs.
+    local recolored = clean:gsub("|c%x%x%x%x%x%x%x%x", dimColor)
     -- Replace internal color resets so they maintain the dim color
     recolored = recolored:gsub("|r", dimColor)
     return recolored .. "|r"

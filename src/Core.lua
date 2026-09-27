@@ -84,8 +84,8 @@ function Skyward:RunChatSimulation()
     self:Print(("Running chat simulation under mode: |cffffd100%s|r"):format(mode))
 
     -- Simulated players
-    local skybornePlayer = "Aeloria-Skyward"
-    local whitelistedPlayer = "Zephyr-Skyward"
+    local skybornePlayer = "Aeloria Skyward"
+    local whitelistedPlayer = "Zephyr Skyward"
     local sampleMessage = "Greetings mortals, the Skyborne have taken flight above Azeroth!"
 
     -- Ensure simulated race data in cache

@@ -131,11 +131,38 @@ local function TestChannelFiltering()
     print("ChannelFiltering: 3/3 passed.")
 end
 
+-- Test: Styling Options
+local function TestStylingOptions()
+    Skyward:InitDatabase()
+
+    -- Test tag toggle
+    Skyward:SetTagEnabled(false)
+    assert(Skyward:IsTagEnabled() == false, "Expected tag to be disabled")
+    Skyward:SetTagEnabled(true)
+    assert(Skyward:IsTagEnabled() == true, "Expected tag to be enabled")
+
+    -- Test REGULAR color returns nil
+    Skyward:SetMarkColor("REGULAR")
+    assert(Skyward:GetMarkColorCode() == nil, "Expected REGULAR color to return nil")
+
+    -- Test hex color with opacity
+    Skyward:SetMarkColor("777b80")
+    Skyward:SetMarkOpacity("33") -- 20%
+    assert(Skyward:GetMarkColorCode() == "|c33777b80", "Expected |c33777b80")
+
+    Skyward:SetMarkOpacity("0d") -- 5%
+    assert(Skyward:GetMarkColorCode() == "|c0d777b80", "Expected |c0d777b80")
+
+    print("StylingOptions: 5/5 passed.")
+end
+
 -- Run tests
 TestNormalizeName()
 TestCapitalizeName()
 TestIsWhitelisted()
 TestChannelFiltering()
+TestStylingOptions()
 
 print("\nAll tests passed successfully!")
+
 
