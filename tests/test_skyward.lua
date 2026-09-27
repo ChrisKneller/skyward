@@ -57,17 +57,16 @@ local function TestIsWhitelisted()
     local tests = {
         -- Given author "Aeloria", should pass because "aeloria" is whitelisted
         { input = "Aeloria", expected = true },
-        -- Given author "Aeloria Windrider-Stormrage", should pass because "aeloria" is whitelisted (firstName match)
-        { input = "Aeloria Windrider-Stormrage", expected = true },
+        -- Given author "Aeloria Windrider-Stormrage", should FAIL because "aeloria" is whitelisted, not the full name!
+        { input = "Aeloria Windrider-Stormrage", expected = false },
         -- Given author "Zephyr Windrunner", should pass because full name is whitelisted
         { input = "Zephyr Windrunner", expected = true },
         -- Given author "Zephyr Windrunner-Area52", should pass because full name matches up to realm
         { input = "Zephyr Windrunner-Area52", expected = true },
-        -- Given author "Zephyr", should NOT pass because "zephyr windrunner" is whitelisted (user specifically whitelisted the full name, wait, our logic actually checks wlFirst == firstName, let's see)
-        -- Actually, if whitelist has "zephyr windrunner", its wlFirst is "zephyr". If given is "Zephyr", its firstName is "zephyr". So it WILL pass!
-        { input = "Zephyr", expected = true },
-        -- Given author "Zephyr Storm", should pass because wlFirst matches firstName
-        { input = "Zephyr Storm", expected = true },
+        -- Given author "Zephyr", should NOT pass because "zephyr windrunner" is whitelisted, and Zephyr is only part of it
+        { input = "Zephyr", expected = false },
+        -- Given author "Zephyr Storm", should fail because it doesn't match the whitelisted name
+        { input = "Zephyr Storm", expected = false },
         -- Given author "Unknown", should fail
         { input = "Unknown", expected = false }
     }
