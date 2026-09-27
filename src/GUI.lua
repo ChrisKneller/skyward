@@ -147,19 +147,21 @@ local function UpdateLivePreview()
     local tagStr = (showTag and tag and tag ~= "") and (tag .. " ") or ""
 
     local chHex = Skyward:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
-    local channelPart = "|cff" .. chHex .. "[2. Trade - English]|r"
+    local chCode = "|cff" .. chHex
+
+    local channelPart = chCode .. "[2. Trade - English]|r"
 
     local authorPart
     if isReplaceColor and nameColorCode then
-        authorPart = "[" .. nameColorCode .. "Moon Ray|r]"
+        authorPart = chCode .. "[" .. nameColorCode .. "Moon Ray" .. chCode .. "]|r"
     else
-        -- Unticked: show class color (Druid orange |cffff7c0a)
-        authorPart = "[|cffff7c0aMoon Ray|r]"
+        -- Unticked: show class color (Druid orange |cffff7c0a) with channel-colored brackets
+        authorPart = chCode .. "[|cffff7c0aMoon Ray" .. chCode .. "]|r"
     end
 
-    local msgPart = tagStr .. "|cff" .. chHex .. sampleMsg .. "|r"
+    local msgPart = chCode .. tagStr .. sampleMsg .. "|r"
 
-    previewText:SetText(("%s %s: %s"):format(channelPart, authorPart, msgPart))
+    previewText:SetText(("%s %s%s: %s"):format(channelPart, authorPart, chCode, msgPart))
 end
 
 -- Switch between tabs
@@ -304,20 +306,21 @@ function GUI:CreateMainFrame()
     tabBar:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -8)
 
     local tabs = {
-        { id = "GENERAL",  label = "General" },
-        { id = "CHANNELS", label = "Channels" },
-        { id = "STYLING",  label = "Styling" },
+        { id = "GENERAL",   label = "General" },
+        { id = "WHITELIST", label = "Whitelist" },
+        { id = "CHANNELS",  label = "Channels" },
+        { id = "STYLING",   label = "Styling" },
     }
 
     local tabX = 0
     for _, t in ipairs(tabs) do
-        local btn = CreateStyledButton(tabBar, t.label, 138, 24)
+        local btn = CreateStyledButton(tabBar, t.label, 104, 24)
         btn:SetPoint("TOPLEFT", tabBar, "TOPLEFT", tabX, 0)
         btn:SetScript("OnClick", function()
             SwitchTab(t.id)
         end)
         tabButtons[t.id] = btn
-        tabX = tabX + 144
+        tabX = tabX + 110
     end
 
     -- Tab Divider Line
@@ -345,7 +348,7 @@ function GUI:CreateMainFrame()
     statusText:SetText("Status: Initializing...")
 
     local modeHeader = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    modeHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -10)
+    modeHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -12)
     modeHeader:SetText("Public Channels Filter Mode:")
 
     local modeContainer = CreateFrame("Frame", nil, tabGeneral)
@@ -369,22 +372,53 @@ function GUI:CreateMainFrame()
         btnX = btnX + m.width + 9
     end
 
-    -- Divider
-    local gDiv = tabGeneral:CreateTexture(nil, "ARTWORK")
-    gDiv:SetSize(434, 1)
-    gDiv:SetPoint("TOPLEFT", modeContainer, "BOTTOMLEFT", 0, -8)
-    gDiv:SetColorTexture(0.25, 0.3, 0.35, 0.6)
+    -- Information Card describing the modes
+    local infoCard = CreateFrame("Frame", nil, tabGeneral, backdropTemplate)
+    infoCard:SetSize(434, 160)
+    infoCard:SetPoint("TOPLEFT", modeContainer, "BOTTOMLEFT", 0, -18)
+    infoCard:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    infoCard:SetBackdropColor(0, 0, 0, 0.4)
+    infoCard:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.7)
 
-    -- Whitelist Section
-    local wlHeader = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    wlHeader:SetPoint("TOPLEFT", gDiv, "BOTTOMLEFT", 0, -8)
+    local cardHeader = infoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    cardHeader:SetPoint("TOPLEFT", 12, -12)
+    cardHeader:SetText("Filter Mode Details:")
+
+    local cardDesc = infoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    cardDesc:SetPoint("TOPLEFT", cardHeader, "BOTTOMLEFT", 0, -8)
+    cardDesc:SetPoint("RIGHT", infoCard, "RIGHT", -12, 0)
+    cardDesc:SetJustifyH("LEFT")
+    cardDesc:SetText(
+        "|cffffd100Off (Normal)|r:\nSkyward is idle. All messages and class colors appear normally.\n\n" ..
+        "|cff00b4d8Styled|r:\nMessages from Skyborne players are styled with a prefix tag and/or custom name color (configured in the Styling tab).\n\n" ..
+        "|cffff4d4dHide (Block)|r:\nCompletely suppresses public chat messages sent by Skyborne players."
+    )
+
+    local navTip = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    navTip:SetPoint("TOPLEFT", infoCard, "BOTTOMLEFT", 2, -16)
+    navTip:SetText("Use the tabs above to manage Whitelist, Channel toggles, and Styling options.")
+
+    ---------------------------------------------------------------------------
+    -- TAB 2: WHITELIST
+    ---------------------------------------------------------------------------
+    local tabWhitelist = CreateTabContentFrame()
+    tabContents["WHITELIST"] = tabWhitelist
+    tabWhitelist:Hide()
+
+    local wlHeader = tabWhitelist:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    wlHeader:SetPoint("TOPLEFT", tabWhitelist, "TOPLEFT", 0, -2)
     wlHeader:SetText("Whitelist (Exempt Characters):")
 
-    local wlDesc = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    local wlDesc = tabWhitelist:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     wlDesc:SetPoint("TOPLEFT", wlHeader, "BOTTOMLEFT", 0, -2)
     wlDesc:SetText("Whitelisted players are never filtered, even if they play Skyborne.")
 
-    nameInput = CreateFrame("EditBox", "SkywardWhitelistInput", tabGeneral, "InputBoxTemplate")
+    nameInput = CreateFrame("EditBox", "SkywardWhitelistInput", tabWhitelist, "InputBoxTemplate")
     nameInput:SetSize(280, 24)
     nameInput:SetPoint("TOPLEFT", wlDesc, "BOTTOMLEFT", 6, -8)
     nameInput:SetAutoFocus(false)
@@ -402,7 +436,7 @@ function GUI:CreateMainFrame()
         end
     end)
 
-    local addBtn = CreateStyledButton(tabGeneral, "Add Whitelist", 120, 24)
+    local addBtn = CreateStyledButton(tabWhitelist, "Add Whitelist", 120, 24)
     addBtn:SetPoint("LEFT", nameInput, "RIGHT", 10, 0)
 
     local function DoAdd()
@@ -422,11 +456,11 @@ function GUI:CreateMainFrame()
     nameInput:SetScript("OnEnterPressed", DoAdd)
 
     -- Whitelist Scroll Area
-    local scrollFrame = CreateFrame("ScrollFrame", "SkywardWhitelistScrollFrame", tabGeneral, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(410, 160)
+    local scrollFrame = CreateFrame("ScrollFrame", "SkywardWhitelistScrollFrame", tabWhitelist, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(410, 300)
     scrollFrame:SetPoint("TOPLEFT", nameInput, "BOTTOMLEFT", 0, -10)
 
-    local scrollBg = CreateFrame("Frame", nil, tabGeneral, backdropTemplate)
+    local scrollBg = CreateFrame("Frame", nil, tabWhitelist, backdropTemplate)
     scrollBg:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", -6, 6)
     scrollBg:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", 24, -6)
     scrollBg:SetBackdrop({
@@ -439,11 +473,11 @@ function GUI:CreateMainFrame()
     scrollBg:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 
     whitelistScrollChild = CreateFrame("Frame", nil, scrollFrame)
-    whitelistScrollChild:SetSize(410, 160)
+    whitelistScrollChild:SetSize(410, 300)
     scrollFrame:SetScrollChild(whitelistScrollChild)
 
     ---------------------------------------------------------------------------
-    -- TAB 2: CHANNELS
+    -- TAB 3: CHANNELS
     ---------------------------------------------------------------------------
     local tabChannels = CreateTabContentFrame()
     tabContents["CHANNELS"] = tabChannels
@@ -511,7 +545,7 @@ function GUI:CreateMainFrame()
     end)
 
     ---------------------------------------------------------------------------
-    -- TAB 3: STYLING
+    -- TAB 4: STYLING
     ---------------------------------------------------------------------------
     local tabStyling = CreateTabContentFrame()
     tabContents["STYLING"] = tabStyling

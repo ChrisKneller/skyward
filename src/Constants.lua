@@ -5,7 +5,7 @@
 
 local ADDON_NAME, Skyward = ...
 
-Skyward.VERSION = "1.0.0"
+Skyward.VERSION = "0.1.0"
 Skyward.TITLE = "Skyward"
 Skyward.INTERFACE = "110100"
 

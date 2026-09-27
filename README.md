@@ -1,40 +1,68 @@
 # Skyward
 
-**Skyward** is an addon for *World of Warcraft Forever* designed to mitigate and filter interactions with the newly introduced **Skyborne** race.
+**Skyward** is an addon for *World of Warcraft Forever* (Classic Beta client) designed to filter, style, and shield against interactions with the newly introduced **Skyborne** race.
+
+Current Release: **v0.1.0 (Beta Testing Release)**
 
 ---
 
-## Features (v1.0.0)
+## Features
 
-- **In-Game Control Panel (`/skyward`)**:
-  - Movable, standalone configuration frame.
-  - Quick-switch toggle buttons for public chat filtering.
-  - Whitelist management interface to exempt specific characters.
-  - Built-in simulation tool to preview filter modes.
-  - Cache inspector displaying detected characters.
+- **In-Game Configuration Panel (`/skyward`)**:
+  - Standalone, movable dark-themed UI window with 4 organized tabs:
+    - **General**: Fast, high-level filter mode selection (Off, Styled, Hide/Block) with clear mode descriptions.
+    - **Whitelist**: Case-insensitive character exemption manager with dedicated search/add and scrollable roster.
+    - **Channels**: Granular per-channel filter toggles (General, Trade, Services, LookingForGroup, LocalDefense, Say, Yell, Emotes, Custom).
+    - **Styling**: Customizable prefix tags (e.g., `[Skyborne]`) and character name color replacement with live in-game preview.
+- **Dynamic "Channel" Color Matching**:
+  - Allows replacing the Skyborne player's class color with the exact font color configured in your WoW Chat Settings for that channel (e.g. Trade pink/peach).
 - **Public Chat Filter Engine**:
-  - Supports General, Trade, Services, Say, Yell, and Emote channels.
-  - **Three Filter Modes**:
-    - **Off (Default)**: Normal chat behavior; messages pass through unmodified.
-    - **Dimmed / Marked**: Greys out Skyborne messages and attaches a muted `[Skyborne]` tag (supports strikethrough or greyed-out styles).
-    - **Hide (Blocked)**: Completely drops messages sent by Skyborne characters from chat.
-- **Whitelist System**:
-  - Add character names (e.g. `Character` or `Character-Realm`) to protect friends and guildmates.
-  - Whitelisted characters bypass filtering in all modes.
+  - **Off (Normal)**: Skyward is idle; all messages appear unmodified.
+  - **Styled**: Messages from Skyborne players are marked with custom prefix tags and/or character name recoloring while preserving normal chat readability.
+  - **Hide (Block)**: Completely suppresses public chat messages sent by Skyborne players.
 - **Race Detection & GUID Cache**:
-  - Automatically queries character race via GUIDs (`GetPlayerInfoByGUID`).
+  - Automatically identifies character race via GUIDs (`GetPlayerInfoByGUID`).
   - Passively harvests race data from mouseovers, targets, nameplates, and group rosters.
-  - Stores discovered races persistently in `SkywardDB` to maintain speed and reduce API lag.
+  - Persistently caches discovered players in `SkywardDB` to maintain instant performance and zero chat lag.
 
 ---
 
-## Installation
+## Manual Installation (Without an AddOn Manager)
 
-1. Copy the `skyward` folder into your WoW Forever Beta AddOns directory:
-   ```
-   C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\Skyward
-   ```
-2. Start the game and make sure **Skyward** is enabled in the AddOn list on your character selection screen.
+If you are not using an AddOn manager like CurseForge or WowUp, follow these steps to install Skyward manually:
+
+1. **Download the AddOn**:
+   - Go to the [Releases](https://github.com/ChrisKneller/skyward/releases) page on GitHub.
+   - Download the latest `Skyward-v0.1.0.zip` release file.
+
+2. **Locate your World of Warcraft AddOns Folder**:
+   - **WoW Forever / Classic Beta**:
+     ```text
+     C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\
+     ```
+   - **Classic Era / Classic**:
+     ```text
+     C:\Program Files (x86)\World of Warcraft\_classic_era_\Interface\AddOns\
+     ```
+   - **Retail**:
+     ```text
+     C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\
+     ```
+
+3. **Extract the ZIP**:
+   - Extract the contents of `Skyward-v0.1.0.zip` directly into your `Interface\AddOns\` directory.
+   - **Important**: Make sure the final folder structure is:
+     ```text
+     Interface\AddOns\Skyward\Skyward.toc
+     Interface\AddOns\Skyward\src\...
+     ```
+     *(Avoid duplicate nested folders like `Interface\AddOns\Skyward\Skyward\...`)*
+
+4. **Verify In-Game**:
+   - Launch World of Warcraft.
+   - On the Character Selection screen, click the **AddOns** button in the bottom-left corner.
+   - Ensure **Skyward** is checked. (If your client version differs, check **"Load out of date AddOns"**).
+   - Once logged in, type `/skyward` to open settings!
 
 ---
 
@@ -42,21 +70,21 @@
 
 | Command | Description |
 | :--- | :--- |
-| `/skyward` or `/sw` | Open/close the Skyward configuration panel |
-| `/skyward off` | Disable chat filtering (normal mode) |
-| `/skyward marked` | Enable dimmed / greyed-out mode for Skyborne messages |
-| `/skyward hide` | Enable hide / blocked mode for Skyborne messages |
+| `/skyward` | Open or close the Skyward configuration panel |
+| `/skyward off` | Switch filter mode to Off (normal chat behavior) |
+| `/skyward marked` | Switch filter mode to Styled |
+| `/skyward hide` | Switch filter mode to Hide (suppress Skyborne messages) |
 | `/skyward whitelist add <Name>` | Add a character to the whitelist |
 | `/skyward whitelist remove <Name>` | Remove a character from the whitelist |
-| `/skyward whitelist list` | List all whitelisted characters in chat |
-| `/skyward test` | Run a chat filter simulation in your chat frame |
-| `/skyward help` | Display available commands |
+| `/skyward whitelist list` | View all whitelisted characters in chat |
+| `/skyward test` | Run an in-game chat simulation to test your settings |
+| `/skyward help` | Display available chat commands |
 
 ---
 
 ## Project Structure
 
-```
+```text
 skyward/
 ├── Skyward.toc              # Addon manifest and load order
 ├── src/
@@ -77,4 +105,8 @@ skyward/
 └── README.md                # User manual and documentation
 ```
 
-For the complete architectural design and roadmap for future versions (audio muting, nameplate culling, LFG radar, duel defense), see [docs/SPEC.md](docs/SPEC.md).
+---
+
+## License & Contributing
+
+Built for the World of Warcraft Forever community. Issues and contributions are welcome via [GitHub Issues and Pull Requests](https://github.com/ChrisKneller/skyward).
