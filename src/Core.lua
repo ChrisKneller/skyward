@@ -67,6 +67,17 @@ local function HandleSlashCommand(msg)
     end
 end
 
+-- Register Slash Commands at file load time (WoW standard for reliable indexing)
+SLASH_SKYWARD1 = "/skyward"
+SLASH_SKYWARD2 = "/sw"
+SLASH_SKYWARD3 = "/sky"
+SlashCmdList["SKYWARD"] = HandleSlashCommand
+
+SLASH_SW1 = "/sw"
+SLASH_SW2 = "/skyward"
+SlashCmdList["SW"] = HandleSlashCommand
+
+
 -- Simulation tool for in-game testing
 function Skyward:RunChatSimulation()
     local mode = self:GetMode()
@@ -147,10 +158,12 @@ coreFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "PLAYER_LOGIN" then
         RegisterGameMenuCategory()
 
-        -- Register Slash Commands
-        SLASH_SKYWARD1 = "/skyward"
-        SLASH_SKYWARD2 = "/sw"
-        SlashCmdList["SKYWARD"] = HandleSlashCommand
+        -- Ensure registration in hash_SlashCmdList if present in the client
+        if hash_SlashCmdList then
+            hash_SlashCmdList["/SKYWARD"] = HandleSlashCommand
+            hash_SlashCmdList["/SW"] = HandleSlashCommand
+            hash_SlashCmdList["/SKY"] = HandleSlashCommand
+        end
 
         local currentMode = Skyward:GetMode()
         Skyward:Print(("Loaded |cff90e0efv%s|r. Current Mode: |cffffd100%s|r. Type |cff00b4d8/skyward|r for settings."):format(Skyward.VERSION, currentMode))
