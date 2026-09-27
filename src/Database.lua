@@ -125,11 +125,55 @@ function Skyward:GetFilteredChannelCount()
 end
 
 -- Marking Style & Character Name Coloring Helpers
-function Skyward:GetMarkColorCode()
-    local color = (self.db and self.db.markColor) or "777b80"
-    if color == "REGULAR" then
+function Skyward:IsReplaceNameColorEnabled()
+    if not self.db or self.db.replaceNameColor == nil then
+        return true
+    end
+    return self.db.replaceNameColor == true
+end
+
+function Skyward:SetReplaceNameColor(enabled)
+    if not self.db then return end
+    self.db.replaceNameColor = enabled and true or false
+end
+
+function Skyward:GetChannelColorHex(event, zoneChannelID, channelIndex)
+    if ChatTypeInfo then
+        local info
+        if event == "CHAT_MSG_CHANNEL" then
+            local chNum = zoneChannelID or channelIndex
+            if chNum and ChatTypeInfo["CHANNEL" .. chNum] then
+                info = ChatTypeInfo["CHANNEL" .. chNum]
+            elseif ChatTypeInfo["CHANNEL"] then
+                info = ChatTypeInfo["CHANNEL"]
+            end
+        elseif event then
+            local chatType = event:gsub("^CHAT_MSG_", "")
+            info = ChatTypeInfo[chatType]
+        else
+            -- Default to Trade channel 2 for preview
+            info = ChatTypeInfo["CHANNEL2"] or ChatTypeInfo["CHANNEL"]
+        end
+
+        if info and info.r and info.g and info.b then
+            return string.format("%02x%02x%02x", math.floor(info.r * 255 + 0.5), math.floor(info.g * 255 + 0.5), math.floor(info.b * 255 + 0.5))
+        end
+    end
+    -- Fallback default channel color (the light pinkish-peach set in user screenshot)
+    return "e5c8d0"
+end
+
+function Skyward:GetMarkColorCode(event, zoneChannelID, channelIndex)
+    if not self:IsReplaceNameColorEnabled() then
         return nil
     end
+
+    local color = (self.db and self.db.markColor) or "777b80"
+    if color == "CHANNEL" then
+        local hex = self:GetChannelColorHex(event, zoneChannelID, channelIndex)
+        return "|cff" .. hex
+    end
+
     return "|cff" .. color
 end
 

@@ -54,17 +54,15 @@ function Skyward:FormatMarkedMessage(msg)
 end
 
 -- Helper to recolor the player's name (replacing class color with chosen color)
-local function RecolorPlayerName(text, nameColor)
+local function RecolorPlayerName(text, nameColorCode)
     if not text then return text end
     -- Remove the invisible detection marker
     local clean = text:gsub(SKYWARD_MARKER, "")
 
-    -- If Regular text color is selected or no color, keep default class colors
-    if not nameColor or nameColor == "REGULAR" then
+    -- If name coloring is disabled or not set, keep default class colors
+    if not nameColorCode or not Skyward:IsReplaceNameColorEnabled() then
         return clean
     end
-
-    local colorCode = "|cff" .. nameColor
 
     -- Blizzard formats player links as: |Hplayer:Name:...|h[|cffRRGGBBName|r]|h
     -- We target the displayText inside the player link and replace whatever color is inside, stopping at the end of the name
@@ -72,9 +70,9 @@ local function RecolorPlayerName(text, nameColor)
         local cleanInner = inner:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
         local cleanName = cleanInner:match("^%[(.*)%]$")
         if cleanName then
-            return prefix .. "[" .. colorCode .. cleanName .. "|r]" .. suffix
+            return prefix .. "[" .. nameColorCode .. cleanName .. "|r]" .. suffix
         else
-            return prefix .. colorCode .. cleanInner .. "|r" .. suffix
+            return prefix .. nameColorCode .. cleanInner .. "|r" .. suffix
         end
     end)
 
@@ -89,8 +87,13 @@ local function HookChatFrame(frame)
     local origAddMessage = frame.AddMessage
     frame.AddMessage = function(self, text, r, g, b, id, ...)
         if text and type(text) == "string" and text:find(SKYWARD_MARKER, 1, true) then
-            local nameColor = Skyward.db and Skyward.db.markColor
-            text = RecolorPlayerName(text, nameColor)
+            local nameColorCode = Skyward:GetMarkColorCode()
+            -- If user chose CHANNEL, take the exact (r, g, b) passed to AddMessage
+            if Skyward:IsReplaceNameColorEnabled() and Skyward.db and Skyward.db.markColor == "CHANNEL" and r and g and b then
+                local hex = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
+                nameColorCode = "|cff" .. hex
+            end
+            text = RecolorPlayerName(text, nameColorCode)
         end
         return origAddMessage(self, text, r, g, b, id, ...)
     end
@@ -103,11 +106,13 @@ function Skyward:HookColoredName()
         local origGetColoredName = GetColoredName
         GetColoredName = function(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
             if Skyward and Skyward.GetMode and Skyward:GetMode() == Skyward.MODES.MARKED then
-                local isSkyborne = Skyward:IsAuthorSkyborne(arg12, arg2)
-                if isSkyborne and not Skyward:IsWhitelisted(arg2) then
-                    local nameColor = Skyward:GetMarkColorCode()
-                    if nameColor and arg2 then
-                        return nameColor .. arg2 .. "|r"
+                if Skyward:IsReplaceNameColorEnabled() then
+                    local isSkyborne = Skyward:IsAuthorSkyborne(arg12, arg2)
+                    if isSkyborne and not Skyward:IsWhitelisted(arg2) then
+                        local nameColor = Skyward:GetMarkColorCode(event, arg8, arg7)
+                        if nameColor and arg2 then
+                            return nameColor .. arg2 .. "|r"
+                        end
                     end
                 end
             end

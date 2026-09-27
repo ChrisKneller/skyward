@@ -59,7 +59,7 @@ Skyward.CHANNEL_DEFINITIONS = {
 
 -- Character name color presets for "Styled" mode
 Skyward.MARK_COLOR_PRESETS = {
-    { id = "REGULAR", label = "Regular",    hex = "REGULAR" },
+    { id = "CHANNEL", label = "Channel",    hex = "CHANNEL" },
     { id = "GREY",    label = "Muted Grey", hex = "777b80" },
     { id = "DARK",    label = "Dark Slate", hex = "4f5660" },
     { id = "SLATE",   label = "Faded Blue", hex = "5c7080" },
@@ -70,7 +70,8 @@ Skyward.MARK_COLOR_PRESETS = {
 -- Default SavedVariables
 Skyward.DEFAULT_SETTINGS = {
     mode = Skyward.MODES.OFF,     -- Default to OFF as requested ("default off")
-    markColor = "777b80",         -- 6-hex color code or "REGULAR"
+    replaceNameColor = true,      -- Toggle whether character name class color is replaced
+    markColor = "777b80",         -- 6-hex color code or "CHANNEL"
     showTag = true,               -- Toggle prefix tag on/off
     markTag = "[Skyborne]",       -- Custom prefix tag
     filterChannels = {

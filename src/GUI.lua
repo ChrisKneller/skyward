@@ -28,6 +28,7 @@ local channelStatusText = nil
 -- Styling Tab UI references
 local tagCheckbox = nil
 local tagInput = nil
+local nameColorCheckbox = nil
 local colorPresetButtons = {}
 local previewText = nil
 
@@ -137,16 +138,26 @@ end
 local function UpdateLivePreview()
     if not previewText then return end
 
-    local nameColor = Skyward:GetMarkColorCode()
+    local isReplaceColor = Skyward:IsReplaceNameColorEnabled()
+    local nameColorCode = isReplaceColor and Skyward:GetMarkColorCode("CHAT_MSG_CHANNEL", 2, 2) or nil
     local showTag = Skyward:IsTagEnabled()
     local tag = Skyward:GetMarkTag()
 
     local sampleMsg = "Does anyone know if the Rune Broker is in forever?"
     local tagStr = (showTag and tag and tag ~= "") and (tag .. " ") or ""
 
-    local channelPart = "|cffaaaaaa[2. Trade - English]|r"
-    local authorPart = nameColor and ("[" .. nameColor .. "Moon Ray|r]") or "[Moon Ray]"
-    local msgPart = tagStr .. sampleMsg
+    local chHex = Skyward:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
+    local channelPart = "|cff" .. chHex .. "[2. Trade - English]|r"
+
+    local authorPart
+    if isReplaceColor and nameColorCode then
+        authorPart = "[" .. nameColorCode .. "Moon Ray|r]"
+    else
+        -- Unticked: show class color (Druid orange |cffff7c0a)
+        authorPart = "[|cffff7c0aMoon Ray|r]"
+    end
+
+    local msgPart = tagStr .. "|cff" .. chHex .. sampleMsg .. "|r"
 
     previewText:SetText(("%s %s: %s"):format(channelPart, authorPart, msgPart))
 end
@@ -217,14 +228,29 @@ function Skyward:UpdateGUI()
     if tagInput and not tagInput:HasFocus() then
         tagInput:SetText(self:GetMarkTag())
     end
+    if nameColorCheckbox then
+        nameColorCheckbox:SetChecked(self:IsReplaceNameColorEnabled())
+    end
 
-    -- Update Color Preset Highlights
+    -- Update Color Preset Highlights & State
+    local isColorEnabled = self:IsReplaceNameColorEnabled()
     local currentColor = (self.db and self.db.markColor) or "777b80"
     for hex, btn in pairs(colorPresetButtons) do
-        if hex == currentColor then
-            btn:LockHighlight()
-        else
+        if hex == "CHANNEL" then
+            local chHex = self:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
+            btn:SetText("|cff" .. chHex .. "Channel|r")
+        end
+
+        if not isColorEnabled then
             btn:UnlockHighlight()
+            btn:SetAlpha(0.4)
+        else
+            btn:SetAlpha(1.0)
+            if hex == currentColor then
+                btn:LockHighlight()
+            else
+                btn:UnlockHighlight()
+            end
         end
     end
 
@@ -500,7 +526,7 @@ function GUI:CreateMainFrame()
     stSub:SetText("Customize character name color and prefix tags for Skyborne players.")
 
     -- 1. Prefix Tag Toggle & Input Box
-    tagCheckbox = CreateCheckbox(tabStyling, "Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
+    tagCheckbox = CreateCheckbox(tabStyling, "Add Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
         Skyward:SetTagEnabled(isChecked)
         UpdateLivePreview()
     end)
@@ -518,13 +544,15 @@ function GUI:CreateMainFrame()
     end)
 
     -- 2. Character Name Color Theme (2 rows of 3 buttons)
-    local colorLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    colorLabel:SetPoint("TOPLEFT", tagCheckbox, "BOTTOMLEFT", 4, -18)
-    colorLabel:SetText("Character Name Color (Replaces class color):")
+    nameColorCheckbox = CreateCheckbox(tabStyling, "Replace Character Name Colour", "Toggle whether the character's class color is replaced for Skyborne players.", function(isChecked)
+        Skyward:SetReplaceNameColor(isChecked)
+        Skyward:UpdateGUI()
+    end)
+    nameColorCheckbox:SetPoint("TOPLEFT", tagCheckbox, "BOTTOMLEFT", 0, -14)
 
     local colorContainer = CreateFrame("Frame", nil, tabStyling)
     colorContainer:SetSize(434, 56)
-    colorContainer:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -6)
+    colorContainer:SetPoint("TOPLEFT", nameColorCheckbox, "BOTTOMLEFT", 0, -6)
 
     for idx, preset in ipairs(Skyward.MARK_COLOR_PRESETS or {}) do
         local row = (idx <= 3) and 0 or 1
@@ -532,7 +560,14 @@ function GUI:CreateMainFrame()
         local btnX = col * 144
         local btnY = - (row * 28)
 
-        local btnText = (preset.hex == "REGULAR") and "|cffffffffRegular|r" or ("|cff" .. preset.hex .. preset.label .. "|r")
+        local btnText
+        if preset.hex == "CHANNEL" then
+            local chHex = Skyward:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
+            btnText = "|cff" .. chHex .. "Channel|r"
+        else
+            btnText = "|cff" .. preset.hex .. preset.label .. "|r"
+        end
+
         local btn = CreateStyledButton(colorContainer, btnText, 138, 24)
         btn:SetPoint("TOPLEFT", colorContainer, "TOPLEFT", btnX, btnY)
         btn:SetScript("OnClick", function()
