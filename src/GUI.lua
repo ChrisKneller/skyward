@@ -1,7 +1,7 @@
 --[[
     Skyward: In-Game Configuration Panel
-    Standalone UI frame accessible via /skyward, /sw, /sky
-    Tabs: General (Mode / Whitelist), Channels, and Styling (Appearance & Live Preview).
+    Standalone UI frame accessible via /skyward
+    Tabs: Chat (Mode, Channels, Styling), Grouping (LFG & Party Filters), Whitelist.
 ]]
 
 local ADDON_NAME, Skyward = ...
@@ -11,26 +11,37 @@ Skyward.GUI = GUI
 
 local mainFrame = nil
 local whitelistScrollChild = nil
-local modeButtons = {}
-local statusText = nil
 local statsText = nil
 local nameInput = nil
 
--- Tab Containers & Buttons
-local currentTab = "GENERAL"
+-- Top-level Navigation Tabs
+local currentTab = "CHAT"
 local tabButtons = {}
 local tabContents = {}
 
--- Channels Tab UI references
+-- Chat Tab Navigation & UI references
+local currentChatSubTab = "MODE"
+local chatSubButtons = {}
+local chatSubContents = {}
+local chatModeButtons = {}
+local chatStatusText = nil
+
+-- Channels Sub-tab UI references
 local channelCheckboxes = {}
 local channelStatusText = nil
 
--- Styling Tab UI references
+-- Styling Sub-tab UI references
 local tagCheckbox = nil
 local tagInput = nil
 local nameColorCheckbox = nil
 local colorPresetButtons = {}
 local previewText = nil
+
+-- Grouping Tab UI references
+local groupingModeButtons = {}
+local groupingStatusText = nil
+local groupingBadgeCheckbox = nil
+local groupingConfirmCheckbox = nil
 
 -- Helper to create standard styled buttons
 local function CreateStyledButton(parent, text, width, height)
@@ -134,7 +145,7 @@ function Skyward:UpdateWhitelistList()
     whitelistScrollChild:SetHeight(math.max(math.abs(yOffset) + 10, 140))
 end
 
--- Update the live preview box in the Styling tab
+-- Update the live preview box in the Styling sub-tab
 local function UpdateLivePreview()
     if not previewText then return end
 
@@ -155,7 +166,7 @@ local function UpdateLivePreview()
     if isReplaceColor and nameColorCode then
         authorPart = chCode .. "[" .. nameColorCode .. "Moon Ray" .. chCode .. "]|r"
     else
-        -- Unticked: show class color (Druid orange |cffff7c0a) with channel-colored brackets
+        -- Unticked: show class colour (Druid orange |cffff7c0a) with channel-coloured brackets
         authorPart = chCode .. "[|cffff7c0aMoon Ray" .. chCode .. "]|r"
     end
 
@@ -164,7 +175,7 @@ local function UpdateLivePreview()
     previewText:SetText(("%s %s%s: %s"):format(channelPart, authorPart, chCode, msgPart))
 end
 
--- Switch between tabs
+-- Switch between top-level tabs
 local function SwitchTab(tabKey)
     currentTab = tabKey
     for key, contentFrame in pairs(tabContents) do
@@ -179,42 +190,86 @@ local function SwitchTab(tabKey)
     Skyward:UpdateGUI()
 end
 
+-- Switch between sub-tabs inside Chat
+local function SwitchChatSubTab(subKey)
+    currentChatSubTab = subKey
+    for key, contentFrame in pairs(chatSubContents) do
+        if key == subKey then
+            contentFrame:Show()
+            if chatSubButtons[key] then chatSubButtons[key]:LockHighlight() end
+        else
+            contentFrame:Hide()
+            if chatSubButtons[key] then chatSubButtons[key]:UnlockHighlight() end
+        end
+    end
+    Skyward:UpdateGUI()
+end
+
 -- Update GUI display states across all tabs
 function Skyward:UpdateGUI()
     if not mainFrame or not mainFrame:IsShown() then return end
 
-    local currentMode = self:GetMode()
+    local currentChatMode = self:GetMode()
+    local currentGroupingMode = self:GetGroupingMode()
 
-    -- 1. Update Mode Buttons
-    for modeKey, btn in pairs(modeButtons) do
-        if modeKey == currentMode then
+    -- 1. Update Chat Mode Buttons
+    for modeKey, btn in pairs(chatModeButtons) do
+        if modeKey == currentChatMode then
             btn:LockHighlight()
         else
             btn:UnlockHighlight()
         end
     end
 
-    -- 2. Update Status Banner
-    if statusText then
-        if currentMode == Skyward.MODES.OFF then
-            statusText:SetText("Status: |cff808080Filter Off (All Messages Shown)|r")
-        elseif currentMode == Skyward.MODES.MARKED then
-            statusText:SetText("Status: |cff90e0efStyled (Skyborne Messages Filtered & Styled)|r")
-        elseif currentMode == Skyward.MODES.HIDE then
-            statusText:SetText("Status: |cffff4d4dBlocked (Skyborne Messages Hidden)|r")
+    -- 2. Update Chat Status Banner
+    if chatStatusText then
+        if currentChatMode == Skyward.MODES.OFF then
+            chatStatusText:SetText("Chat Status: |cff808080Filter Off (All Messages Shown)|r")
+        elseif currentChatMode == Skyward.MODES.WARN then
+            chatStatusText:SetText("Chat Status: |cff90e0efWarn (Skyborne Messages Filtered & Styled)|r")
+        elseif currentChatMode == Skyward.MODES.HIDE then
+            chatStatusText:SetText("Chat Status: |cffff4d4dBlocked (Skyborne Messages Hidden)|r")
         end
     end
 
-    -- 3. Update Cache Stats (Footer)
+    -- 3. Update Grouping Mode Buttons
+    for modeKey, btn in pairs(groupingModeButtons) do
+        if modeKey == currentGroupingMode then
+            btn:LockHighlight()
+        else
+            btn:UnlockHighlight()
+        end
+    end
+
+    -- 4. Update Grouping Status Banner
+    if groupingStatusText then
+        if currentGroupingMode == Skyward.GROUPING_MODES.OFF then
+            groupingStatusText:SetText("Grouping Status: |cff808080Filter Off (Normal Grouping)|r")
+        elseif currentGroupingMode == Skyward.GROUPING_MODES.WARN then
+            groupingStatusText:SetText("Grouping Status: |cff90e0efWarn (LFG Badges & Invite Warnings Active)|r")
+        elseif currentGroupingMode == Skyward.GROUPING_MODES.HIDE then
+            groupingStatusText:SetText("Grouping Status: |cffff4d4dBlocked (Skyborne Groups Hidden & Blocked)|r")
+        end
+    end
+
+    -- 5. Update Grouping Options Checkboxes
+    if groupingBadgeCheckbox then
+        groupingBadgeCheckbox:SetChecked(self:IsGroupingLfgBadgeEnabled())
+    end
+    if groupingConfirmCheckbox then
+        groupingConfirmCheckbox:SetChecked(self:IsGroupingConfirmInviteEnabled())
+    end
+
+    -- 6. Update Cache Stats (Footer)
     if statsText then
         local total, skyborneCount = self:GetCacheStats()
         statsText:SetText(("Known Players in Cache: |cffffffff%d|r  |  Skyborne Identified: |cff00b4d8%d|r"):format(total, skyborneCount))
     end
 
-    -- 4. Update Whitelist Scroll List
+    -- 7. Update Whitelist Scroll List
     self:UpdateWhitelistList()
 
-    -- 5. Update Channels Checkboxes & Count
+    -- 8. Update Channels Checkboxes & Count
     for chKey, cb in pairs(channelCheckboxes) do
         cb:SetChecked(self:IsChannelFiltered(chKey))
     end
@@ -223,7 +278,7 @@ function Skyward:UpdateGUI()
         channelStatusText:SetText(("Active Channel Filters: |cff52b788%d|r of |cffffffff%d|r enabled"):format(active, total))
     end
 
-    -- 6. Update Styling Tab Elements
+    -- 9. Update Styling Sub-tab Elements
     if tagCheckbox then
         tagCheckbox:SetChecked(self:IsTagEnabled())
     end
@@ -265,7 +320,7 @@ function GUI:CreateMainFrame()
 
     local backdropTemplate = BackdropTemplateMixin and "BackdropTemplate" or nil
     local f = CreateFrame("Frame", "SkywardMainFrame", UIParent, backdropTemplate)
-    f:SetSize(470, 570)
+    f:SetSize(470, 580)
     f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -300,27 +355,26 @@ function GUI:CreateMainFrame()
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
     subtitle:SetText("Skyborne Race Interaction & Chat Shield - WoW Forever")
 
-    -- Navigation Tab Bar
+    -- Top-Level Navigation Tab Bar (Chat, Grouping, Whitelist)
     local tabBar = CreateFrame("Frame", nil, f)
     tabBar:SetSize(434, 28)
     tabBar:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -8)
 
     local tabs = {
-        { id = "GENERAL",   label = "General" },
+        { id = "CHAT",      label = "Chat" },
+        { id = "GROUPING",  label = "Grouping" },
         { id = "WHITELIST", label = "Whitelist" },
-        { id = "CHANNELS",  label = "Channels" },
-        { id = "STYLING",   label = "Styling" },
     }
 
     local tabX = 0
     for _, t in ipairs(tabs) do
-        local btn = CreateStyledButton(tabBar, t.label, 104, 24)
+        local btn = CreateStyledButton(tabBar, t.label, 140, 24)
         btn:SetPoint("TOPLEFT", tabBar, "TOPLEFT", tabX, 0)
         btn:SetScript("OnClick", function()
             SwitchTab(t.id)
         end)
         tabButtons[t.id] = btn
-        tabX = tabX + 110
+        tabX = tabX + 147
     end
 
     -- Tab Divider Line
@@ -329,7 +383,7 @@ function GUI:CreateMainFrame()
     tabDiv:SetPoint("TOPLEFT", tabBar, "BOTTOMLEFT", 0, -4)
     tabDiv:SetColorTexture(0.35, 0.4, 0.45, 0.8)
 
-    -- Container area for tab contents
+    -- Container area for top-level tab contents
     local function CreateTabContentFrame()
         local content = CreateFrame("Frame", nil, f)
         content:SetPoint("TOPLEFT", tabDiv, "BOTTOMLEFT", 0, -6)
@@ -338,26 +392,64 @@ function GUI:CreateMainFrame()
     end
 
     ---------------------------------------------------------------------------
-    -- TAB 1: GENERAL
+    -- MAIN TAB 1: CHAT
     ---------------------------------------------------------------------------
-    local tabGeneral = CreateTabContentFrame()
-    tabContents["GENERAL"] = tabGeneral
+    local tabChat = CreateTabContentFrame()
+    tabContents["CHAT"] = tabChat
 
-    statusText = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    statusText:SetPoint("TOPLEFT", tabGeneral, "TOPLEFT", 0, -2)
-    statusText:SetText("Status: Initializing...")
+    -- Sub-tab navigation bar for Chat (Filter Mode, Channels, Styling)
+    local chatSubTabBar = CreateFrame("Frame", nil, tabChat)
+    chatSubTabBar:SetSize(434, 24)
+    chatSubTabBar:SetPoint("TOPLEFT", tabChat, "TOPLEFT", 0, 0)
 
-    local modeHeader = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    modeHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -12)
+    local chatSubTabs = {
+        { id = "MODE",     label = "Filter Mode" },
+        { id = "CHANNELS", label = "Channels" },
+        { id = "STYLING",  label = "Styling" },
+    }
+
+    local subX = 0
+    for _, st in ipairs(chatSubTabs) do
+        local btn = CreateStyledButton(chatSubTabBar, st.label, 140, 22)
+        btn:SetPoint("TOPLEFT", chatSubTabBar, "TOPLEFT", subX, 0)
+        btn:SetScript("OnClick", function()
+            SwitchChatSubTab(st.id)
+        end)
+        chatSubButtons[st.id] = btn
+        subX = subX + 147
+    end
+
+    local chatSubDiv = tabChat:CreateTexture(nil, "ARTWORK")
+    chatSubDiv:SetSize(434, 1)
+    chatSubDiv:SetPoint("TOPLEFT", chatSubTabBar, "BOTTOMLEFT", 0, -4)
+    chatSubDiv:SetColorTexture(0.25, 0.3, 0.35, 0.6)
+
+    local function CreateChatSubFrame()
+        local subContent = CreateFrame("Frame", nil, tabChat)
+        subContent:SetPoint("TOPLEFT", chatSubDiv, "BOTTOMLEFT", 0, -6)
+        subContent:SetPoint("BOTTOMRIGHT", tabChat, "BOTTOMRIGHT", 0, 0)
+        return subContent
+    end
+
+    -- Sub-tab 1A: Chat Filter Mode
+    local subChatMode = CreateChatSubFrame()
+    chatSubContents["MODE"] = subChatMode
+
+    chatStatusText = subChatMode:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    chatStatusText:SetPoint("TOPLEFT", subChatMode, "TOPLEFT", 0, -2)
+    chatStatusText:SetText("Chat Status: Initializing...")
+
+    local modeHeader = subChatMode:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    modeHeader:SetPoint("TOPLEFT", chatStatusText, "BOTTOMLEFT", 0, -12)
     modeHeader:SetText("Public Channels Filter Mode:")
 
-    local modeContainer = CreateFrame("Frame", nil, tabGeneral)
+    local modeContainer = CreateFrame("Frame", nil, subChatMode)
     modeContainer:SetSize(434, 32)
     modeContainer:SetPoint("TOPLEFT", modeHeader, "BOTTOMLEFT", 0, -6)
 
     local modes = {
-        { id = Skyward.MODES.OFF, label = "Off (Normal)", width = 135 },
-        { id = Skyward.MODES.MARKED, label = "Styled", width = 145 },
+        { id = Skyward.MODES.OFF,  label = "Off (Normal)", width = 135 },
+        { id = Skyward.MODES.WARN, label = "Warn",         width = 145 },
         { id = Skyward.MODES.HIDE, label = "Hide (Block)", width = 135 },
     }
 
@@ -368,12 +460,11 @@ function GUI:CreateMainFrame()
         btn:SetScript("OnClick", function()
             Skyward:SetMode(m.id)
         end)
-        modeButtons[m.id] = btn
+        chatModeButtons[m.id] = btn
         btnX = btnX + m.width + 9
     end
 
-    -- Information Card describing the modes
-    local infoCard = CreateFrame("Frame", nil, tabGeneral, backdropTemplate)
+    local infoCard = CreateFrame("Frame", nil, subChatMode, backdropTemplate)
     infoCard:SetSize(434, 160)
     infoCard:SetPoint("TOPLEFT", modeContainer, "BOTTOMLEFT", 0, -18)
     infoCard:SetBackdrop({
@@ -387,7 +478,7 @@ function GUI:CreateMainFrame()
 
     local cardHeader = infoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     cardHeader:SetPoint("TOPLEFT", 12, -12)
-    cardHeader:SetText("Filter Mode Details:")
+    cardHeader:SetText("Chat Filter Mode Details:")
 
     local cardDesc = infoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     cardDesc:SetPoint("TOPLEFT", cardHeader, "BOTTOMLEFT", 0, -8)
@@ -395,16 +486,259 @@ function GUI:CreateMainFrame()
     cardDesc:SetJustifyH("LEFT")
     cardDesc:SetText(
         "|cffffd100Off (Normal)|r:\nSkyward is idle. All messages and class colours appear normally.\n\n" ..
-        "|cff00b4d8Styled|r:\nMessages from Skyborne players are styled with a prefix tag and/or custom name colour (configured in the Styling tab).\n\n" ..
+        "|cff00b4d8Warn|r:\nMessages from Skyborne players are styled with a prefix tag and/or custom name colour (configured in the Styling sub-tab).\n\n" ..
         "|cffff4d4dHide (Block)|r:\nCompletely suppresses public chat messages sent by Skyborne players."
     )
 
-    local navTip = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    local navTip = subChatMode:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     navTip:SetPoint("TOPLEFT", infoCard, "BOTTOMLEFT", 2, -16)
-    navTip:SetText("Use the tabs above to manage Whitelist, Channel toggles, and Styling options.")
+    navTip:SetText("Use the sub-tabs above to customise monitored Channels and Styling options.")
+
+    -- Sub-tab 1B: Channels
+    local subChatChannels = CreateChatSubFrame()
+    chatSubContents["CHANNELS"] = subChatChannels
+    subChatChannels:Hide()
+
+    local chHeader = subChatChannels:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    chHeader:SetPoint("TOPLEFT", subChatChannels, "TOPLEFT", 0, -2)
+    chHeader:SetText("Channel Filter Toggles:")
+
+    local chSub = subChatChannels:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    chSub:SetPoint("TOPLEFT", chHeader, "BOTTOMLEFT", 0, -3)
+    chSub:SetText("Select which chat channels Skyward monitors. Unticked channels are never filtered.")
+
+    channelStatusText = subChatChannels:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    channelStatusText:SetPoint("TOPLEFT", chSub, "BOTTOMLEFT", 0, -6)
+    channelStatusText:SetText("Active Channel Filters: 9 of 9 enabled")
+
+    local chCol1X = 10
+    local chCol2X = 225
+    local chY = -65
+
+    for idx, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
+        local colX = (idx <= 5) and chCol1X or chCol2X
+        local curY = chY - (((idx <= 5) and (idx - 1) or (idx - 6)) * 34)
+
+        local cb = CreateCheckbox(subChatChannels, def.name, def.desc, function(isChecked)
+            Skyward:SetChannelFiltered(def.key, isChecked)
+            Skyward:UpdateGUI()
+        end)
+        cb:SetPoint("TOPLEFT", subChatChannels, "TOPLEFT", colX, curY)
+        channelCheckboxes[def.key] = cb
+    end
+
+    local chBtnContainer = CreateFrame("Frame", nil, subChatChannels)
+    chBtnContainer:SetSize(434, 30)
+    chBtnContainer:SetPoint("BOTTOMLEFT", subChatChannels, "BOTTOMLEFT", 0, 10)
+
+    local selectAllBtn = CreateStyledButton(chBtnContainer, "Select All", 100, 24)
+    selectAllBtn:SetPoint("LEFT", chBtnContainer, "LEFT", 10, 0)
+    selectAllBtn:SetScript("OnClick", function()
+        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
+            Skyward:SetChannelFiltered(def.key, true)
+        end
+        Skyward:UpdateGUI()
+    end)
+
+    local deselectAllBtn = CreateStyledButton(chBtnContainer, "Deselect All", 105, 24)
+    deselectAllBtn:SetPoint("LEFT", selectAllBtn, "RIGHT", 10, 0)
+    deselectAllBtn:SetScript("OnClick", function()
+        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
+            Skyward:SetChannelFiltered(def.key, false)
+        end
+        Skyward:UpdateGUI()
+    end)
+
+    local resetChBtn = CreateStyledButton(chBtnContainer, "Reset Defaults", 115, 24)
+    resetChBtn:SetPoint("LEFT", deselectAllBtn, "RIGHT", 10, 0)
+    resetChBtn:SetScript("OnClick", function()
+        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
+            Skyward:SetChannelFiltered(def.key, true)
+        end
+        Skyward:UpdateGUI()
+    end)
+
+    -- Sub-tab 1C: Styling
+    local subChatStyling = CreateChatSubFrame()
+    chatSubContents["STYLING"] = subChatStyling
+    subChatStyling:Hide()
+
+    local stHeader = subChatStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    stHeader:SetPoint("TOPLEFT", subChatStyling, "TOPLEFT", 0, -2)
+    stHeader:SetText("Styled Skyborne Message Appearance:")
+
+    local stSub = subChatStyling:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    stSub:SetPoint("TOPLEFT", stHeader, "BOTTOMLEFT", 0, -3)
+    stSub:SetText("Customise character name colour and prefix tags for Skyborne players.")
+
+    tagCheckbox = CreateCheckbox(subChatStyling, "Add Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
+        Skyward:SetTagEnabled(isChecked)
+        UpdateLivePreview()
+    end)
+    tagCheckbox:SetPoint("TOPLEFT", stSub, "BOTTOMLEFT", 2, -12)
+
+    tagInput = CreateFrame("EditBox", "SkywardTagInput", subChatStyling, "InputBoxTemplate")
+    tagInput:SetSize(180, 22)
+    tagInput:SetPoint("LEFT", tagCheckbox.Label, "RIGHT", 12, 0)
+    tagInput:SetAutoFocus(false)
+    tagInput:SetMaxLetters(30)
+    tagInput:SetText(Skyward:GetMarkTag())
+    tagInput:SetScript("OnTextChanged", function(self)
+        Skyward:SetMarkTag(self:GetText())
+        UpdateLivePreview()
+    end)
+
+    nameColorCheckbox = CreateCheckbox(subChatStyling, "Replace Character Name Colour", "Toggle whether the character's class colour is replaced for Skyborne players.", function(isChecked)
+        Skyward:SetReplaceNameColor(isChecked)
+        Skyward:UpdateGUI()
+    end)
+    nameColorCheckbox:SetPoint("TOPLEFT", tagCheckbox, "BOTTOMLEFT", 0, -14)
+
+    local colorContainer = CreateFrame("Frame", nil, subChatStyling)
+    colorContainer:SetSize(434, 56)
+    colorContainer:SetPoint("TOPLEFT", nameColorCheckbox, "BOTTOMLEFT", 0, -6)
+
+    for idx, preset in ipairs(Skyward.MARK_COLOR_PRESETS or {}) do
+        local row = (idx <= 3) and 0 or 1
+        local col = (idx <= 3) and (idx - 1) or (idx - 4)
+        local cbtnX = col * 144
+        local cbtnY = - (row * 28)
+
+        local btnText
+        if preset.hex == "CHANNEL" then
+            local chHex = Skyward:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
+            btnText = "|cff" .. chHex .. "Channel|r"
+        else
+            btnText = "|cff" .. preset.hex .. preset.label .. "|r"
+        end
+
+        local btn = CreateStyledButton(colorContainer, btnText, 138, 24)
+        btn:SetPoint("TOPLEFT", colorContainer, "TOPLEFT", cbtnX, cbtnY)
+        btn:SetScript("OnClick", function()
+            Skyward:SetMarkColor(preset.hex)
+            Skyward:UpdateGUI()
+        end)
+        colorPresetButtons[preset.hex] = btn
+    end
+
+    local previewLabel = subChatStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    previewLabel:SetPoint("TOPLEFT", colorContainer, "BOTTOMLEFT", 0, -22)
+    previewLabel:SetText("Live Chat Preview:")
+
+    local previewBox = CreateFrame("Frame", nil, subChatStyling, backdropTemplate)
+    previewBox:SetSize(430, 48)
+    previewBox:SetPoint("TOPLEFT", previewLabel, "BOTTOMLEFT", 0, -4)
+    previewBox:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    previewBox:SetBackdropColor(0, 0, 0, 0.7)
+    previewBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+
+    previewText = previewBox:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    previewText:SetPoint("LEFT", previewBox, "LEFT", 10, 0)
+    previewText:SetPoint("RIGHT", previewBox, "RIGHT", -10, 0)
+    previewText:SetJustifyH("LEFT")
 
     ---------------------------------------------------------------------------
-    -- TAB 2: WHITELIST
+    -- MAIN TAB 2: GROUPING (LFG / LFM & Party Invites)
+    ---------------------------------------------------------------------------
+    local tabGrouping = CreateTabContentFrame()
+    tabContents["GROUPING"] = tabGrouping
+    tabGrouping:Hide()
+
+    groupingStatusText = tabGrouping:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    groupingStatusText:SetPoint("TOPLEFT", tabGrouping, "TOPLEFT", 0, -2)
+    groupingStatusText:SetText("Grouping Status: Initializing...")
+
+    local gModeHeader = tabGrouping:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    gModeHeader:SetPoint("TOPLEFT", groupingStatusText, "BOTTOMLEFT", 0, -12)
+    gModeHeader:SetText("LFG & Grouping Filter Mode:")
+
+    local gModeContainer = CreateFrame("Frame", nil, tabGrouping)
+    gModeContainer:SetSize(434, 32)
+    gModeContainer:SetPoint("TOPLEFT", gModeHeader, "BOTTOMLEFT", 0, -6)
+
+    local gModes = {
+        { id = Skyward.GROUPING_MODES.OFF,  label = "Off (Normal)", width = 135 },
+        { id = Skyward.GROUPING_MODES.WARN, label = "Warn",         width = 145 },
+        { id = Skyward.GROUPING_MODES.HIDE, label = "Hide (Block)", width = 135 },
+    }
+
+    local gBtnX = 0
+    for _, gm in ipairs(gModes) do
+        local btn = CreateStyledButton(gModeContainer, gm.label, gm.width, 26)
+        btn:SetPoint("TOPLEFT", gModeContainer, "TOPLEFT", gBtnX, 0)
+        btn:SetScript("OnClick", function()
+            Skyward:SetGroupingMode(gm.id)
+        end)
+        groupingModeButtons[gm.id] = btn
+        gBtnX = gBtnX + gm.width + 9
+    end
+
+    -- Grouping Options Header & Checkboxes
+    local gOptionsHeader = tabGrouping:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    gOptionsHeader:SetPoint("TOPLEFT", gModeContainer, "BOTTOMLEFT", 0, -14)
+    gOptionsHeader:SetText("Warning & Detection Options:")
+
+    groupingBadgeCheckbox = CreateCheckbox(
+        tabGrouping,
+        "Badge & highlight group listings in LFG browser",
+        "Displays a prominent [Skyborne] warning badge in the Premade Group Finder when the leader is Skyborne.",
+        function(isChecked)
+            Skyward:SetGroupingLfgBadgeEnabled(isChecked)
+        end
+    )
+    groupingBadgeCheckbox:SetPoint("TOPLEFT", gOptionsHeader, "BOTTOMLEFT", 2, -6)
+
+    groupingConfirmCheckbox = CreateCheckbox(
+        tabGrouping,
+        "Warning confirmation popup when applying or accepting invites",
+        "Prompts a confirmation warning dialog before applying to a Skyborne-led group or accepting a party invite from a Skyborne player.",
+        function(isChecked)
+            Skyward:SetGroupingConfirmInviteEnabled(isChecked)
+        end
+    )
+    groupingConfirmCheckbox:SetPoint("TOPLEFT", groupingBadgeCheckbox, "BOTTOMLEFT", 0, -6)
+
+    -- Grouping Information Card
+    local gInfoCard = CreateFrame("Frame", nil, tabGrouping, backdropTemplate)
+    gInfoCard:SetSize(434, 150)
+    gInfoCard:SetPoint("TOPLEFT", groupingConfirmCheckbox, "BOTTOMLEFT", -2, -14)
+    gInfoCard:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    gInfoCard:SetBackdropColor(0, 0, 0, 0.4)
+    gInfoCard:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.7)
+
+    local gCardHeader = gInfoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    gCardHeader:SetPoint("TOPLEFT", 12, -12)
+    gCardHeader:SetText("Grouping Filter Mode Details:")
+
+    local gCardDesc = gInfoCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    gCardDesc:SetPoint("TOPLEFT", gCardHeader, "BOTTOMLEFT", 0, -8)
+    gCardDesc:SetPoint("RIGHT", gInfoCard, "RIGHT", -12, 0)
+    gCardDesc:SetJustifyH("LEFT")
+    gCardDesc:SetText(
+        "|cffffd100Off (Normal)|r:\nAll LFG listings and group invitations behave normally.\n\n" ..
+        "|cff00b4d8Warn|r:\nHighlights Skyborne leaders in the Group Finder and prompts a warning confirmation dialog before applying or accepting group invitations.\n\n" ..
+        "|cffff4d4dHide (Block)|r:\nCompletely suppresses Skyborne groups from LFG search results and automatically declines party invites from Skyborne players."
+    )
+
+    -- Test / Simulation Button for Grouping
+    local simLfgBtn = CreateStyledButton(tabGrouping, "Simulate Skyborne LFG Listing", 215, 24)
+    simLfgBtn:SetPoint("TOPLEFT", gInfoCard, "BOTTOMLEFT", 2, -14)
+    simLfgBtn:SetScript("OnClick", function()
+        Skyward:SimulateLfgWarning()
+    end)
+
+    ---------------------------------------------------------------------------
+    -- MAIN TAB 3: WHITELIST
     ---------------------------------------------------------------------------
     local tabWhitelist = CreateTabContentFrame()
     tabContents["WHITELIST"] = tabWhitelist
@@ -455,9 +789,8 @@ function GUI:CreateMainFrame()
     addBtn:SetScript("OnClick", DoAdd)
     nameInput:SetScript("OnEnterPressed", DoAdd)
 
-    -- Whitelist Scroll Area
     local scrollFrame = CreateFrame("ScrollFrame", "SkywardWhitelistScrollFrame", tabWhitelist, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(410, 300)
+    scrollFrame:SetSize(410, 310)
     scrollFrame:SetPoint("TOPLEFT", nameInput, "BOTTOMLEFT", 0, -10)
 
     local scrollBg = CreateFrame("Frame", nil, tabWhitelist, backdropTemplate)
@@ -473,165 +806,8 @@ function GUI:CreateMainFrame()
     scrollBg:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 
     whitelistScrollChild = CreateFrame("Frame", nil, scrollFrame)
-    whitelistScrollChild:SetSize(410, 300)
+    whitelistScrollChild:SetSize(410, 310)
     scrollFrame:SetScrollChild(whitelistScrollChild)
-
-    ---------------------------------------------------------------------------
-    -- TAB 3: CHANNELS
-    ---------------------------------------------------------------------------
-    local tabChannels = CreateTabContentFrame()
-    tabContents["CHANNELS"] = tabChannels
-    tabChannels:Hide()
-
-    local chHeader = tabChannels:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    chHeader:SetPoint("TOPLEFT", tabChannels, "TOPLEFT", 0, -2)
-    chHeader:SetText("Channel Filter Toggles:")
-
-    local chSub = tabChannels:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    chSub:SetPoint("TOPLEFT", chHeader, "BOTTOMLEFT", 0, -3)
-    chSub:SetText("Select which chat channels Skyward monitors. Unticked channels are never filtered.")
-
-    channelStatusText = tabChannels:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    channelStatusText:SetPoint("TOPLEFT", chSub, "BOTTOMLEFT", 0, -6)
-    channelStatusText:SetText("Active Channel Filters: 9 of 9 enabled")
-
-    -- Two Column Checkbox layout
-    local chCol1X = 10
-    local chCol2X = 225
-    local chY = -65
-
-    for idx, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
-        local colX = (idx <= 5) and chCol1X or chCol2X
-        local curY = chY - (((idx <= 5) and (idx - 1) or (idx - 6)) * 34)
-
-        local cb = CreateCheckbox(tabChannels, def.name, def.desc, function(isChecked)
-            Skyward:SetChannelFiltered(def.key, isChecked)
-            Skyward:UpdateGUI()
-        end)
-        cb:SetPoint("TOPLEFT", tabChannels, "TOPLEFT", colX, curY)
-        channelCheckboxes[def.key] = cb
-    end
-
-    -- Bulk action buttons
-    local chBtnContainer = CreateFrame("Frame", nil, tabChannels)
-    chBtnContainer:SetSize(434, 30)
-    chBtnContainer:SetPoint("BOTTOMLEFT", tabChannels, "BOTTOMLEFT", 0, 10)
-
-    local selectAllBtn = CreateStyledButton(chBtnContainer, "Select All", 100, 24)
-    selectAllBtn:SetPoint("LEFT", chBtnContainer, "LEFT", 10, 0)
-    selectAllBtn:SetScript("OnClick", function()
-        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
-            Skyward:SetChannelFiltered(def.key, true)
-        end
-        Skyward:UpdateGUI()
-    end)
-
-    local deselectAllBtn = CreateStyledButton(chBtnContainer, "Deselect All", 105, 24)
-    deselectAllBtn:SetPoint("LEFT", selectAllBtn, "RIGHT", 10, 0)
-    deselectAllBtn:SetScript("OnClick", function()
-        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
-            Skyward:SetChannelFiltered(def.key, false)
-        end
-        Skyward:UpdateGUI()
-    end)
-
-    local resetChBtn = CreateStyledButton(chBtnContainer, "Reset Defaults", 115, 24)
-    resetChBtn:SetPoint("LEFT", deselectAllBtn, "RIGHT", 10, 0)
-    resetChBtn:SetScript("OnClick", function()
-        for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS or {}) do
-            Skyward:SetChannelFiltered(def.key, true)
-        end
-        Skyward:UpdateGUI()
-    end)
-
-    ---------------------------------------------------------------------------
-    -- TAB 4: STYLING
-    ---------------------------------------------------------------------------
-    local tabStyling = CreateTabContentFrame()
-    tabContents["STYLING"] = tabStyling
-    tabStyling:Hide()
-
-    local stHeader = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    stHeader:SetPoint("TOPLEFT", tabStyling, "TOPLEFT", 0, -2)
-    stHeader:SetText("Styled Skyborne Message Appearance:")
-
-    local stSub = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    stSub:SetPoint("TOPLEFT", stHeader, "BOTTOMLEFT", 0, -3)
-    stSub:SetText("Customise character name colour and prefix tags for Skyborne players.")
-
-    -- 1. Prefix Tag Toggle & Input Box
-    tagCheckbox = CreateCheckbox(tabStyling, "Add Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
-        Skyward:SetTagEnabled(isChecked)
-        UpdateLivePreview()
-    end)
-    tagCheckbox:SetPoint("TOPLEFT", stSub, "BOTTOMLEFT", 2, -12)
-
-    tagInput = CreateFrame("EditBox", "SkywardTagInput", tabStyling, "InputBoxTemplate")
-    tagInput:SetSize(180, 22)
-    tagInput:SetPoint("LEFT", tagCheckbox.Label, "RIGHT", 12, 0)
-    tagInput:SetAutoFocus(false)
-    tagInput:SetMaxLetters(30)
-    tagInput:SetText(Skyward:GetMarkTag())
-    tagInput:SetScript("OnTextChanged", function(self)
-        Skyward:SetMarkTag(self:GetText())
-        UpdateLivePreview()
-    end)
-
-    -- 2. Character Name Color Theme (2 rows of 3 buttons)
-    nameColorCheckbox = CreateCheckbox(tabStyling, "Replace Character Name Colour", "Toggle whether the character's class colour is replaced for Skyborne players.", function(isChecked)
-        Skyward:SetReplaceNameColor(isChecked)
-        Skyward:UpdateGUI()
-    end)
-    nameColorCheckbox:SetPoint("TOPLEFT", tagCheckbox, "BOTTOMLEFT", 0, -14)
-
-    local colorContainer = CreateFrame("Frame", nil, tabStyling)
-    colorContainer:SetSize(434, 56)
-    colorContainer:SetPoint("TOPLEFT", nameColorCheckbox, "BOTTOMLEFT", 0, -6)
-
-    for idx, preset in ipairs(Skyward.MARK_COLOR_PRESETS or {}) do
-        local row = (idx <= 3) and 0 or 1
-        local col = (idx <= 3) and (idx - 1) or (idx - 4)
-        local btnX = col * 144
-        local btnY = - (row * 28)
-
-        local btnText
-        if preset.hex == "CHANNEL" then
-            local chHex = Skyward:GetChannelColorHex("CHAT_MSG_CHANNEL", 2, 2)
-            btnText = "|cff" .. chHex .. "Channel|r"
-        else
-            btnText = "|cff" .. preset.hex .. preset.label .. "|r"
-        end
-
-        local btn = CreateStyledButton(colorContainer, btnText, 138, 24)
-        btn:SetPoint("TOPLEFT", colorContainer, "TOPLEFT", btnX, btnY)
-        btn:SetScript("OnClick", function()
-            Skyward:SetMarkColor(preset.hex)
-            Skyward:UpdateGUI()
-        end)
-        colorPresetButtons[preset.hex] = btn
-    end
-
-    -- 3. Live Preview Box
-    local previewLabel = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    previewLabel:SetPoint("TOPLEFT", colorContainer, "BOTTOMLEFT", 0, -22)
-    previewLabel:SetText("Live Chat Preview:")
-
-    local previewBox = CreateFrame("Frame", nil, tabStyling, backdropTemplate)
-    previewBox:SetSize(430, 48)
-    previewBox:SetPoint("TOPLEFT", previewLabel, "BOTTOMLEFT", 0, -4)
-    previewBox:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    previewBox:SetBackdropColor(0, 0, 0, 0.7)
-    previewBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
-
-    previewText = previewBox:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    previewText:SetPoint("LEFT", previewBox, "LEFT", 10, 0)
-    previewText:SetPoint("RIGHT", previewBox, "RIGHT", -10, 0)
-    previewText:SetJustifyH("LEFT")
 
     ---------------------------------------------------------------------------
     -- PERSISTENT FOOTER TOOLS (Always visible across all tabs)
@@ -659,11 +835,13 @@ function GUI:CreateMainFrame()
 
     f:SetScript("OnShow", function()
         SwitchTab(currentTab)
+        SwitchChatSubTab(currentChatSubTab)
         Skyward:UpdateGUI()
     end)
 
     mainFrame = f
-    SwitchTab("GENERAL")
+    SwitchTab("CHAT")
+    SwitchChatSubTab("MODE")
     return mainFrame
 end
 

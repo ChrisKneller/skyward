@@ -152,13 +152,42 @@ local function TestStylingOptions()
     print("StylingOptions: 4/4 passed.")
 end
 
+-- Test: Grouping Options & WARN Mode
+local function TestGroupingOptions()
+    SkywardDB = { mode = "MARKED" } -- Test legacy MARKED migration
+    Skyward:InitDatabase()
+
+    assert(Skyward:GetMode() == "WARN", "Expected MARKED mode to migrate to WARN")
+    assert(Skyward:GetGroupingMode() == "OFF", "Expected default grouping mode to be OFF")
+
+    -- Test Setting Grouping Mode
+    Skyward:SetGroupingMode("WARN")
+    assert(Skyward:GetGroupingMode() == "WARN", "Expected grouping mode to be WARN")
+
+    Skyward:SetGroupingMode("HIDE")
+    assert(Skyward:GetGroupingMode() == "HIDE", "Expected grouping mode to be HIDE")
+
+    -- Test Grouping Options Toggles
+    assert(Skyward:IsGroupingLfgBadgeEnabled() == true, "Expected LFG badge enabled by default")
+    Skyward:SetGroupingLfgBadgeEnabled(false)
+    assert(Skyward:IsGroupingLfgBadgeEnabled() == false, "Expected LFG badge disabled")
+
+    assert(Skyward:IsGroupingConfirmInviteEnabled() == true, "Expected Confirm invite enabled by default")
+    Skyward:SetGroupingConfirmInviteEnabled(false)
+    assert(Skyward:IsGroupingConfirmInviteEnabled() == false, "Expected Confirm invite disabled")
+
+    print("GroupingOptions: 7/7 passed.")
+end
+
 -- Run tests
 TestNormalizeName()
 TestCapitalizeName()
 TestIsWhitelisted()
 TestChannelFiltering()
 TestStylingOptions()
+TestGroupingOptions()
 
 print("\nAll tests passed successfully!")
+
 
 

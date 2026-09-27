@@ -90,6 +90,14 @@ function Skyward:InitDatabase()
     if SkywardDB.markTag == nil then SkywardDB.markTag = "[Skyborne]" end
     if SkywardDB.showTag == nil then SkywardDB.showTag = true end
 
+    -- Ensure grouping defaults exist
+    if SkywardDB.groupingMode == nil then SkywardDB.groupingMode = Skyward.GROUPING_MODES.OFF end
+    if SkywardDB.groupingLfgBadge == nil then SkywardDB.groupingLfgBadge = true end
+    if SkywardDB.groupingConfirmInvite == nil then SkywardDB.groupingConfirmInvite = true end
+
+    -- Migrate legacy MARKED mode to WARN
+    if SkywardDB.mode == "MARKED" then SkywardDB.mode = "WARN" end
+
     self.db = SkywardDB
 end
 
@@ -208,23 +216,66 @@ end
 
 
 
--- Get current filter mode ("OFF", "MARKED", "HIDE")
+-- Get current chat filter mode ("OFF", "WARN", "HIDE")
 function Skyward:GetMode()
     if not self.db then return Skyward.MODES.OFF end
-    return self.db.mode or Skyward.MODES.OFF
+    local mode = self.db.mode or Skyward.MODES.OFF
+    if mode == "MARKED" then mode = "WARN" end
+    return mode
 end
 
--- Set filter mode
+-- Set chat filter mode
 function Skyward:SetMode(newMode)
     if not self.db then return end
-    if newMode == Skyward.MODES.OFF or newMode == Skyward.MODES.MARKED or newMode == Skyward.MODES.HIDE then
+    if newMode == "MARKED" then newMode = "WARN" end
+    if newMode == Skyward.MODES.OFF or newMode == Skyward.MODES.WARN or newMode == Skyward.MODES.HIDE then
         self.db.mode = newMode
-        local displayMode = (newMode == Skyward.MODES.MARKED) and "STYLED" or newMode
-        self:Print(("Public chat filter mode set to: |cffffd100%s|r"):format(displayMode))
+        self:Print(("Public chat filter mode set to: |cffffd100%s|r"):format(newMode))
         if self.UpdateGUI then
             self:UpdateGUI()
         end
     end
+end
+
+-- Grouping & LFG Mode & Options Helpers
+function Skyward:GetGroupingMode()
+    if not self.db then return Skyward.GROUPING_MODES.OFF end
+    return self.db.groupingMode or Skyward.GROUPING_MODES.OFF
+end
+
+function Skyward:SetGroupingMode(newMode)
+    if not self.db then return end
+    if newMode == Skyward.GROUPING_MODES.OFF or newMode == Skyward.GROUPING_MODES.WARN or newMode == Skyward.GROUPING_MODES.HIDE then
+        self.db.groupingMode = newMode
+        self:Print(("Grouping filter mode set to: |cffffd100%s|r"):format(newMode))
+        if self.UpdateGUI then
+            self:UpdateGUI()
+        end
+    end
+end
+
+function Skyward:IsGroupingLfgBadgeEnabled()
+    if not self.db or self.db.groupingLfgBadge == nil then
+        return true
+    end
+    return self.db.groupingLfgBadge == true
+end
+
+function Skyward:SetGroupingLfgBadgeEnabled(enabled)
+    if not self.db then return end
+    self.db.groupingLfgBadge = enabled and true or false
+end
+
+function Skyward:IsGroupingConfirmInviteEnabled()
+    if not self.db or self.db.groupingConfirmInvite == nil then
+        return true
+    end
+    return self.db.groupingConfirmInvite == true
+end
+
+function Skyward:SetGroupingConfirmInviteEnabled(enabled)
+    if not self.db then return end
+    self.db.groupingConfirmInvite = enabled and true or false
 end
 
 -- Whitelist Management

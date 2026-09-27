@@ -25,10 +25,21 @@ local function HandleSlashCommand(msg)
 
     if command == "off" then
         Skyward:SetMode(Skyward.MODES.OFF)
-    elseif command == "marked" or command == "mark" or command == "dim" then
-        Skyward:SetMode(Skyward.MODES.MARKED)
+    elseif command == "warn" or command == "marked" or command == "mark" or command == "dim" then
+        Skyward:SetMode(Skyward.MODES.WARN)
     elseif command == "hide" or command == "block" then
         Skyward:SetMode(Skyward.MODES.HIDE)
+    elseif command == "grouping" or command == "group" or command == "lfg" then
+        local gMode = rest and rest:lower() or ""
+        if gMode == "off" then
+            Skyward:SetGroupingMode(Skyward.GROUPING_MODES.OFF)
+        elseif gMode == "warn" then
+            Skyward:SetGroupingMode(Skyward.GROUPING_MODES.WARN)
+        elseif gMode == "hide" or gMode == "block" then
+            Skyward:SetGroupingMode(Skyward.GROUPING_MODES.HIDE)
+        else
+            Skyward:Print("Grouping usage: /skyward grouping <off|warn|hide>")
+        end
     elseif command == "whitelist" or command == "wl" then
         local subCmd, target = rest:match("^(%S*)%s*(.-)$")
         subCmd = subCmd and subCmd:lower() or ""
@@ -53,15 +64,22 @@ local function HandleSlashCommand(msg)
             Skyward:Print("Whitelist usage: /skyward whitelist <add|remove|list> [CharacterName]")
         end
     elseif command == "test" then
-        Skyward:RunChatSimulation()
+        local testType = rest and rest:lower() or ""
+        if testType == "lfg" or testType == "grouping" or testType == "group" then
+            Skyward:SimulateLfgWarning()
+        else
+            Skyward:RunChatSimulation()
+        end
     elseif command == "help" then
         Skyward:Print("Available commands:")
         DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward|r - Open configuration panel")
-        DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward <off|marked|hide>|r - Change chat filter mode")
+        DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward <off|warn|hide>|r - Change chat filter mode")
+        DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward grouping <off|warn|hide>|r - Change LFG/grouping filter mode")
         DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward whitelist add <Name>|r - Exempt character from filtering")
         DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward whitelist remove <Name>|r - Remove character from whitelist")
         DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward whitelist list|r - View whitelisted characters")
         DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward test|r - Simulate Skyborne chat filtering")
+        DEFAULT_CHAT_FRAME:AddMessage("  |cff90e0ef/skyward test lfg|r - Simulate Skyborne LFG / invite warning")
     else
         Skyward:Print("Unknown command. Type |cff90e0ef/skyward help|r for options, or |cff90e0ef/skyward|r to open settings.")
     end
@@ -150,6 +168,9 @@ coreFrame:SetScript("OnEvent", function(self, event, arg1)
         Skyward:InitDatabase()
         Skyward:InitChatFilter()
         Skyward:InitRaceDetector()
+        if Skyward.Grouping and Skyward.Grouping.Init then
+            Skyward.Grouping:Init()
+        end
     elseif event == "PLAYER_LOGIN" then
         RegisterGameMenuCategory()
 

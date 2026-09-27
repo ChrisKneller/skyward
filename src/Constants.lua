@@ -5,15 +5,23 @@
 
 local ADDON_NAME, Skyward = ...
 
-Skyward.VERSION = "0.1.1"
+Skyward.VERSION = "0.2.0"
 Skyward.TITLE = "Skyward"
 Skyward.INTERFACE = "110100"
 
--- Filter Modes
+-- Chat Filter Modes
 Skyward.MODES = {
     OFF = "OFF",       -- Filter inactive; all messages displayed normally
-    MARKED = "MARKED", -- Messages are visually altered (dimmed/greyed out with [Skyborne] tag)
+    WARN = "WARN",     -- Messages are visually altered (dimmed/greyed out with prefix tag)
+    MARKED = "WARN",   -- Backward compatibility alias
     HIDE = "HIDE",     -- Messages are completely suppressed from chat
+}
+
+-- Grouping & LFG Filter Modes
+Skyward.GROUPING_MODES = {
+    OFF = "OFF",       -- Normal grouping; no LFG alterations or invite blocks
+    WARN = "WARN",     -- Badge/highlight LFG listings and prompt confirmation on invites/applications
+    HIDE = "HIDE",     -- Hide Skyborne LFG listings and auto-decline invites
 }
 
 -- Target Race Tokens & Identifiers
@@ -69,8 +77,11 @@ Skyward.MARK_COLOR_PRESETS = {
 
 -- Default SavedVariables
 Skyward.DEFAULT_SETTINGS = {
-    mode = Skyward.MODES.OFF,     -- Default to OFF as requested ("default off")
-    replaceNameColor = true,      -- Toggle whether character name class colour is replaced
+    mode = Skyward.MODES.OFF,             -- Chat filter mode
+    groupingMode = Skyward.GROUPING_MODES.OFF, -- Grouping filter mode
+    groupingLfgBadge = true,              -- Badge & highlight group listings in LFG browser
+    groupingConfirmInvite = true,         -- Warning confirmation popup when applying or accepting invites
+    replaceNameColor = true,              -- Toggle whether character name class colour is replaced
     markColor = "777b80",         -- 6-hex color code or "CHANNEL"
     showTag = true,               -- Toggle prefix tag on/off
     markTag = "[Skyborne]",       -- Custom prefix tag
