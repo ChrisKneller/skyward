@@ -67,15 +67,10 @@ local function HandleSlashCommand(msg)
     end
 end
 
--- Register Slash Commands at file load time (WoW standard for reliable indexing)
+-- Register Slash Command at file load time (WoW standard for reliable indexing)
 SLASH_SKYWARD1 = "/skyward"
-SLASH_SKYWARD2 = "/sw"
-SLASH_SKYWARD3 = "/sky"
 SlashCmdList["SKYWARD"] = HandleSlashCommand
 
-SLASH_SW1 = "/sw"
-SLASH_SW2 = "/skyward"
-SlashCmdList["SW"] = HandleSlashCommand
 
 
 -- Simulation tool for in-game testing
@@ -161,8 +156,8 @@ coreFrame:SetScript("OnEvent", function(self, event, arg1)
         -- Ensure registration in hash_SlashCmdList if present in the client
         if hash_SlashCmdList then
             hash_SlashCmdList["/SKYWARD"] = HandleSlashCommand
-            hash_SlashCmdList["/SW"] = HandleSlashCommand
-            hash_SlashCmdList["/SKY"] = HandleSlashCommand
+            hash_SlashCmdList["/SW"] = nil
+            hash_SlashCmdList["/SKY"] = nil
         end
 
         local currentMode = Skyward:GetMode()

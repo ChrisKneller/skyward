@@ -322,13 +322,9 @@ function GUI:CreateMainFrame()
     modeHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -10)
     modeHeader:SetText("Public Channels Filter Mode:")
 
-    local modeSub = tabGeneral:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    modeSub:SetPoint("TOPLEFT", modeHeader, "BOTTOMLEFT", 0, -2)
-    modeSub:SetText("Controls General, Trade, Services, Say, Yell, and Emotes.")
-
     local modeContainer = CreateFrame("Frame", nil, tabGeneral)
     modeContainer:SetSize(434, 32)
-    modeContainer:SetPoint("TOPLEFT", modeSub, "BOTTOMLEFT", 0, -6)
+    modeContainer:SetPoint("TOPLEFT", modeHeader, "BOTTOMLEFT", 0, -6)
 
     local modes = {
         { id = Skyward.MODES.OFF, label = "Off (Normal)", width = 135 },

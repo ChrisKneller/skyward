@@ -65,12 +65,14 @@ local function RecolorPlayerName(text, nameColor)
     end
 
     local colorCode = "|cff" .. nameColor
-    -- If player hyperlink is preceded by a class color code, replace that code
-    local recolored, count = clean:gsub("(|c%x%x%x%x%x%x%x%x)(|Hplayer:[^|]+|h%[[^%]]+%]%h)", colorCode .. "%2")
-    if count == 0 then
-        -- If no color code preceded the player hyperlink, wrap it
-        recolored = clean:gsub("(|Hplayer:[^|]+|h%[[^%]]+%]%h)", colorCode .. "%1|r")
-    end
+
+    -- Blizzard formats player links as: |Hplayer:Name:lineID:CHAT_TYPE:target|h[|cffRRGGBBName|r]|h
+    -- We target the displayText inside brackets: |h[ ... ]|h and replace whatever color is inside
+    local recolored = clean:gsub("(|H[^:]*player[^:]*:[^|]+|h%[)(.-)(%]%h)", function(prefix, inner, suffix)
+        local cleanInner = inner:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        return prefix .. colorCode .. cleanInner .. "|r" .. suffix
+    end)
+
     return recolored
 end
 
