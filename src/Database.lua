@@ -9,6 +9,7 @@ local ADDON_NAME, Skyward = ...
 function Skyward:NormalizeName(name)
     if not name or type(name) ~= "string" then return nil end
     local cleanName = strtrim(name):lower()
+    cleanName = cleanName:gsub("%s+", " ") -- Collapse multiple spaces for the two-name system
     return cleanName
 end
 
@@ -78,10 +79,20 @@ function Skyward:IsWhitelisted(characterName)
         return true
     end
 
-    -- Check if whitelist has "player" and given is "player-realm"
+    -- Check just the Firstname (if using the WoW Forever two-name system: "Firstname Lastname")
+    local firstName = shortName and shortName:match("^([^%s]+)")
+    if firstName and self.db.whitelist[firstName] then
+        return true
+    end
+
+    -- Check if whitelist has "player" and given is "player-realm" or "player lastname-realm"
     for whitelistedName in pairs(self.db.whitelist) do
         local wlShort = whitelistedName:match("^([^-]+)")
         if wlShort and wlShort == shortName then
+            return true
+        end
+        local wlFirst = wlShort and wlShort:match("^([^%s]+)")
+        if wlFirst and wlFirst == firstName then
             return true
         end
     end

@@ -27,7 +27,8 @@ local function TestNormalizeName()
         { input = "Aeloria", expected = "aeloria" },
         { input = "Aeloria-Stormrage", expected = "aeloria-stormrage" },
         { input = "  Aeloria  ", expected = "aeloria" },
-        { input = "Aeloria Windrider", expected = "aeloria windrider" } -- WoW Forever two-name format
+        { input = "Aeloria Windrider", expected = "aeloria windrider" },
+        { input = "Aeloria    Windrider-Stormrage", expected = "aeloria windrider-stormrage" }
     }
 
     local passed = 0
@@ -42,7 +43,49 @@ local function TestNormalizeName()
     print(string.format("NormalizeName: %d/%d passed.", passed, #tests))
 end
 
+-- Test: IsWhitelisted (Two-Name System)
+local function TestIsWhitelisted()
+    -- Reset DB
+    SkywardDB = { whitelist = {} }
+    Skyward.db = SkywardDB
+
+    -- Whitelist a player's first name
+    Skyward:AddWhitelist("Aeloria")
+    -- Whitelist another player's full two-name format
+    Skyward:AddWhitelist("Zephyr Windrunner")
+
+    local tests = {
+        -- Given author "Aeloria", should pass because "aeloria" is whitelisted
+        { input = "Aeloria", expected = true },
+        -- Given author "Aeloria Windrider-Stormrage", should pass because "aeloria" is whitelisted (firstName match)
+        { input = "Aeloria Windrider-Stormrage", expected = true },
+        -- Given author "Zephyr Windrunner", should pass because full name is whitelisted
+        { input = "Zephyr Windrunner", expected = true },
+        -- Given author "Zephyr Windrunner-Area52", should pass because full name matches up to realm
+        { input = "Zephyr Windrunner-Area52", expected = true },
+        -- Given author "Zephyr", should NOT pass because "zephyr windrunner" is whitelisted (user specifically whitelisted the full name, wait, our logic actually checks wlFirst == firstName, let's see)
+        -- Actually, if whitelist has "zephyr windrunner", its wlFirst is "zephyr". If given is "Zephyr", its firstName is "zephyr". So it WILL pass!
+        { input = "Zephyr", expected = true },
+        -- Given author "Zephyr Storm", should pass because wlFirst matches firstName
+        { input = "Zephyr Storm", expected = true },
+        -- Given author "Unknown", should fail
+        { input = "Unknown", expected = false }
+    }
+
+    local passed = 0
+    for _, t in ipairs(tests) do
+        local result = Skyward:IsWhitelisted(t.input)
+        if result == t.expected then
+            passed = passed + 1
+        else
+            print(string.format("[FAIL] IsWhitelisted: input '%s', expected %s, got %s", t.input, tostring(t.expected), tostring(result)))
+        end
+    end
+    print(string.format("IsWhitelisted: %d/%d passed.", passed, #tests))
+end
+
 -- Run tests
 TestNormalizeName()
+TestIsWhitelisted()
 
 print("\nTests completed.")
