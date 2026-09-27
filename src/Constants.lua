@@ -44,21 +44,61 @@ Skyward.COLORS = {
     WHITE         = "|cffffffff",
 }
 
+-- Granular channel definitions for settings & tabs
+Skyward.CHANNEL_DEFINITIONS = {
+    { key = "GENERAL",      name = "General",          desc = "Zone General chat (e.g., [1. General - Orgrimmar])" },
+    { key = "TRADE",        name = "Trade",            desc = "City Trade chat (e.g., [2. Trade - English])" },
+    { key = "SERVICES",     name = "Services",         desc = "Trade Services / Boosting channel" },
+    { key = "LFG",          name = "LookingForGroup",  desc = "Global LookingForGroup channel" },
+    { key = "LOCALDEFENSE", name = "LocalDefense",     desc = "Zone defense alerts" },
+    { key = "SAY",          name = "Say (/say)",       desc = "Local proximity speech" },
+    { key = "YELL",         name = "Yell (/yell)",     desc = "Wide proximity shout" },
+    { key = "EMOTE",        name = "Emotes (/emote)",  desc = "Player text emotes (/emote, /me)" },
+    { key = "CUSTOM",       name = "Custom / Other",   desc = "Player-created or custom channels" },
+}
+
+-- Color presets for "Marked" mode
+Skyward.MARK_COLOR_PRESETS = {
+    { id = "GREY",   label = "Muted Grey",   hex = "777b80" },
+    { id = "DARK",   label = "Dark Slate",   hex = "4f5660" },
+    { id = "SLATE",  label = "Faded Blue",   hex = "5c7080" },
+    { id = "VIOLET", label = "Dim Violet",   hex = "6c5b7b" },
+    { id = "ASH",    label = "Ash Grey",     hex = "8c8c8c" },
+}
+
+-- Opacity presets
+Skyward.OPACITY_PRESETS = {
+    { label = "100%", alphaHex = "ff" },
+    { label = "80%",  alphaHex = "cc" },
+    { label = "60%",  alphaHex = "99" },
+    { label = "40%",  alphaHex = "66" },
+}
+
 -- Default SavedVariables
 Skyward.DEFAULT_SETTINGS = {
     mode = Skyward.MODES.OFF,     -- Default to OFF as requested ("default off")
     markStyle = "DIM",            -- "DIM", "TAG", or "STRIKE"
+    markColor = "777b80",         -- 6-hex color code
+    markOpacity = "cc",           -- 2-hex alpha (ff = 100%, cc = 80%, 99 = 60%, 66 = 40%)
+    markTag = "[Skyborne]",       -- Custom prefix tag
+    dimWholeLine = true,          -- Dim entire line (including channel & player name)
     filterChannels = {
-        ["CHAT_MSG_CHANNEL"] = true,
-        ["CHAT_MSG_SAY"] = true,
-        ["CHAT_MSG_YELL"] = true,
-        ["CHAT_MSG_TEXT_EMOTE"] = true,
+        GENERAL      = true,
+        TRADE        = true,
+        SERVICES     = true,
+        LFG          = true,
+        LOCALDEFENSE = true,
+        SAY          = true,
+        YELL         = true,
+        EMOTE        = true,
+        CUSTOM       = true,
     },
     whitelist = {
-        -- Format: ["playername-realm"] = true
+        -- Format: ["playername-realm"] = { name = "DisplayName", addedAt = 123456 }
     },
     cache = {
         -- Format: [guid] = { race = "Skyborne", isSkyborne = true, name = "Player-Realm", timestamp = 123456 }
     },
     debug = false,
 }
+

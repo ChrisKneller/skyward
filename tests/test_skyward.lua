@@ -13,6 +13,11 @@ local Skyward = {
         cache = {}
     }
 }
+function Skyward:Print(msg) end
+
+-- Load Constants.lua
+local constFile = assert(loadfile("src/Constants.lua"))
+constFile(ADDON_NAME, Skyward)
 
 -- Load Database.lua (simulating the WoW loading process)
 -- We use loadfile to execute the file within this environment
@@ -20,6 +25,7 @@ local dbFile = assert(loadfile("src/Database.lua"))
 dbFile(ADDON_NAME, Skyward)
 
 print("Running Skyward Tests...\n")
+
 
 -- Test: NormalizeName
 local function TestNormalizeName()
@@ -83,8 +89,53 @@ local function TestIsWhitelisted()
     print(string.format("IsWhitelisted: %d/%d passed.", passed, #tests))
 end
 
+-- Test: CapitalizeName
+local function TestCapitalizeName()
+    local tests = {
+        { input = "chad obolt", expected = "Chad Obolt" },
+        { input = "CHAD OBOLT", expected = "Chad Obolt" },
+        { input = "aeloria windrider-stormrage", expected = "Aeloria Windrider-Stormrage" },
+        { input = "zephyr", expected = "Zephyr" },
+        { input = "  j'allen  ", expected = "J'allen" },
+    }
+
+    local passed = 0
+    for _, t in ipairs(tests) do
+        local result = Skyward:CapitalizeName(t.input)
+        if result == t.expected then
+            passed = passed + 1
+        else
+            print(string.format("[FAIL] CapitalizeName: expected '%s', got '%s'", t.expected, result))
+        end
+    end
+    print(string.format("CapitalizeName: %d/%d passed.", passed, #tests))
+end
+
+-- Test: Channel Filtering
+local function TestChannelFiltering()
+    Skyward:InitDatabase()
+    
+    -- Default state
+    local isFiltered = Skyward:IsChannelFiltered("TRADE")
+    assert(isFiltered == true, "Expected TRADE to be filtered by default")
+
+    -- Disable TRADE
+    Skyward:SetChannelFiltered("TRADE", false)
+    assert(Skyward:IsChannelFiltered("TRADE") == false, "Expected TRADE to be unfiltered")
+    assert(Skyward:IsChannelFiltered("GENERAL") == true, "Expected GENERAL to remain filtered")
+
+    -- Re-enable TRADE
+    Skyward:SetChannelFiltered("TRADE", true)
+    assert(Skyward:IsChannelFiltered("TRADE") == true, "Expected TRADE to be re-enabled")
+
+    print("ChannelFiltering: 3/3 passed.")
+end
+
 -- Run tests
 TestNormalizeName()
+TestCapitalizeName()
 TestIsWhitelisted()
+TestChannelFiltering()
 
-print("\nTests completed.")
+print("\nAll tests passed successfully!")
+

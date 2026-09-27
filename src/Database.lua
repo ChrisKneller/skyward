@@ -13,6 +13,25 @@ function Skyward:NormalizeName(name)
     return cleanName
 end
 
+-- Helper: Capitalize character name (e.g. "chad obolt" -> "Chad Obolt", "aeloria-stormrage" -> "Aeloria-Stormrage")
+function Skyward:CapitalizeName(name)
+    if not name or type(name) ~= "string" then return name end
+    local clean = strtrim(name):gsub("%s+", " ")
+
+    local function capWord(w)
+        return w:sub(1,1):upper() .. w:sub(2):lower()
+    end
+
+    local pName, realm = clean:match("^([^-]+)%-(.+)$")
+    if pName and realm then
+        local capPName = pName:gsub("(%a[%w']*)", capWord)
+        local capRealm = realm:gsub("(%a[%w']*)", capWord)
+        return capPName .. "-" .. capRealm
+    else
+        return clean:gsub("(%a[%w']*)", capWord)
+    end
+end
+
 -- Initialize or migrate database
 function Skyward:InitDatabase()
     if type(SkywardDB) ~= "table" then
@@ -33,13 +52,111 @@ function Skyward:InitDatabase()
         end
     end
 
-    -- Ensure whitelist and cache sub-tables exist
+    -- Ensure whitelist, cache, and filterChannels sub-tables exist
     SkywardDB.whitelist = SkywardDB.whitelist or {}
     SkywardDB.cache = SkywardDB.cache or {}
-    SkywardDB.filterChannels = SkywardDB.filterChannels or Skyward.DEFAULT_SETTINGS.filterChannels
+    SkywardDB.filterChannels = SkywardDB.filterChannels or {}
+
+    -- Ensure all defined channels have a setting (defaults to true)
+    if Skyward.DEFAULT_SETTINGS and Skyward.DEFAULT_SETTINGS.filterChannels then
+        for chKey, defaultState in pairs(Skyward.DEFAULT_SETTINGS.filterChannels) do
+            if SkywardDB.filterChannels[chKey] == nil then
+                SkywardDB.filterChannels[chKey] = defaultState
+            end
+        end
+    end
+
+    -- Capitalize any existing whitelist entries
+    for key, data in pairs(SkywardDB.whitelist) do
+        if type(data) == "table" and data.name then
+            data.name = self:CapitalizeName(data.name)
+        elseif type(data) == "string" then
+            SkywardDB.whitelist[key] = { name = self:CapitalizeName(data), addedAt = time() }
+        end
+    end
+
+    -- Ensure styling defaults exist
+    if SkywardDB.markColor == nil then SkywardDB.markColor = "777b80" end
+    if SkywardDB.markOpacity == nil then SkywardDB.markOpacity = "cc" end
+    if SkywardDB.markTag == nil then SkywardDB.markTag = "[Skyborne]" end
+    if SkywardDB.dimWholeLine == nil then SkywardDB.dimWholeLine = true end
 
     self.db = SkywardDB
 end
+
+-- Channel Filtering State Helpers
+function Skyward:IsChannelFiltered(channelKey)
+    if not self.db or not self.db.filterChannels then
+        return true
+    end
+    if self.db.filterChannels[channelKey] == nil then
+        return true
+    end
+    return self.db.filterChannels[channelKey] == true
+end
+
+function Skyward:SetChannelFiltered(channelKey, enabled)
+    if not self.db then return end
+    self.db.filterChannels = self.db.filterChannels or {}
+    self.db.filterChannels[channelKey] = enabled and true or false
+end
+
+function Skyward:GetFilteredChannelCount()
+    if not self.db or not self.db.filterChannels or not Skyward.CHANNEL_DEFINITIONS then
+        return 0, 0
+    end
+    local total = #Skyward.CHANNEL_DEFINITIONS
+    local active = 0
+    for _, def in ipairs(Skyward.CHANNEL_DEFINITIONS) do
+        if self:IsChannelFiltered(def.key) then
+            active = active + 1
+        end
+    end
+    return active, total
+end
+
+-- Marking Style & Appearance State Helpers
+function Skyward:GetMarkColorCode()
+    local color = (self.db and self.db.markColor) or "777b80"
+    local opacity = (self.db and self.db.markOpacity) or "cc"
+    return "|c" .. opacity .. color
+end
+
+function Skyward:GetMarkTag()
+    if not self.db or self.db.markTag == nil then
+        return "[Skyborne]"
+    end
+    return self.db.markTag
+end
+
+function Skyward:SetMarkTag(tag)
+    if not self.db then return end
+    self.db.markTag = tag or ""
+end
+
+function Skyward:SetMarkColor(hex)
+    if not self.db then return end
+    self.db.markColor = hex or "777b80"
+end
+
+function Skyward:SetMarkOpacity(alphaHex)
+    if not self.db then return end
+    self.db.markOpacity = alphaHex or "cc"
+end
+
+function Skyward:IsDimWholeLine()
+    if not self.db or self.db.dimWholeLine == nil then
+        return true
+    end
+    return self.db.dimWholeLine == true
+end
+
+function Skyward:SetDimWholeLine(enabled)
+    if not self.db then return end
+    self.db.dimWholeLine = enabled and true or false
+end
+
+
 
 -- Get current filter mode ("OFF", "MARKED", "HIDE")
 function Skyward:GetMode()
@@ -98,16 +215,18 @@ function Skyward:AddWhitelist(characterName)
     end
 
     local norm = self:NormalizeName(characterName)
+    local displayName = self:CapitalizeName(characterName)
+
     if self.db.whitelist[norm] then
-        return false, ("'%s' is already in the whitelist."):format(characterName)
+        return false, ("'%s' is already in the whitelist."):format(displayName)
     end
 
     self.db.whitelist[norm] = {
-        name = characterName,
+        name = displayName,
         addedAt = time(),
     }
 
-    self:Print(("Added |cff52b788%s|r to the whitelist."):format(characterName))
+    self:Print(("Added |cff52b788%s|r to the whitelist."):format(displayName))
     if self.UpdateGUI then self:UpdateGUI() end
     return true
 end
