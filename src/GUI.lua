@@ -95,10 +95,8 @@ function Skyward:UpdateGUI()
     for modeKey, btn in pairs(modeButtons) do
         if modeKey == currentMode then
             btn:LockHighlight()
-            btn:SetBackdropColor(0.1, 0.4, 0.6, 1)
         else
             btn:UnlockHighlight()
-            btn:SetBackdropColor(0.2, 0.2, 0.2, 0.8)
         end
     end
 
