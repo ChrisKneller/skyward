@@ -30,9 +30,9 @@
 
 ## Installation
 
-1. Copy the `skyward` folder into your WoW client's AddOns directory:
+1. Copy the `skyward` folder into your WoW Forever Beta AddOns directory:
    ```
-   World of Warcraft/_retail_/Interface/AddOns/Skyward
+   C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\Skyward
    ```
 2. Start the game and make sure **Skyward** is enabled in the AddOn list on your character selection screen.
 
@@ -58,15 +58,23 @@
 
 ```
 skyward/
-├── Skyward.toc          # Addon manifest and load order
-├── Constants.lua        # Color palettes, default settings, race tokens
-├── Database.lua         # SavedVariables, whitelist logic, cache manager
-├── RaceDetector.lua     # GUID lookups, event-based race scanner
-├── ChatFilter.lua       # ChatFrame message event filters & formatters
-├── GUI.lua              # Standalone options panel & UI components
-├── Core.lua             # Addon lifecycle, slash commands, simulation
-├── SPEC.md              # Detailed architecture spec & future roadmap
-└── README.md            # User manual and documentation
+├── Skyward.toc              # Addon manifest and load order
+├── src/
+│   ├── Constants.lua        # Color palettes, default settings, race tokens
+│   ├── Database.lua         # SavedVariables, whitelist logic, cache manager
+│   ├── RaceDetector.lua     # GUID lookups, event-based race scanner
+│   ├── ChatFilter.lua       # ChatFrame message event filters & formatters
+│   ├── GUI.lua              # Standalone options panel & UI components
+│   └── Core.lua             # Addon lifecycle, slash commands, simulation
+├── docs/
+│   ├── SPEC.md              # Detailed architecture spec & future roadmap
+│   ├── research_wow_forever.md # WoW Forever lore & mechanics research
+│   ├── assumptions.md       # Technical assumptions during initial build
+│   ├── review.md            # Contrast of assumptions vs reality
+│   └── testing.md           # Instructions for running tests
+├── tests/
+│   └── test_skyward.lua     # Out-of-game test suite
+└── README.md                # User manual and documentation
 ```
 
-For the complete architectural design and roadmap for future versions (audio muting, nameplate culling, LFG radar, duel defense), see [SPEC.md](SPEC.md).
+For the complete architectural design and roadmap for future versions (audio muting, nameplate culling, LFG radar, duel defense), see [docs/SPEC.md](docs/SPEC.md).

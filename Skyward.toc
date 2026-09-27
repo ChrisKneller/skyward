@@ -6,9 +6,9 @@
 ## SavedVariables: SkywardDB
 ## IconTexture: Interface\Icons\Spell_Nature_AeroShield
 
-Constants.lua
-Database.lua
-RaceDetector.lua
-ChatFilter.lua
-GUI.lua
-Core.lua
+src/Constants.lua
+src/Database.lua
+src/RaceDetector.lua
+src/ChatFilter.lua
+src/GUI.lua
+src/Core.lua
