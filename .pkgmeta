@@ -1,0 +1,7 @@
+package-as: Skyward
+
+ignore:
+  - AGENTS.md
+  - docs
+  - tests
+  - sync_to_beta.sh
