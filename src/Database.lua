@@ -87,10 +87,8 @@ function Skyward:InitDatabase()
 
     -- Ensure styling defaults exist
     if SkywardDB.markColor == nil then SkywardDB.markColor = "777b80" end
-    if SkywardDB.markOpacity == nil then SkywardDB.markOpacity = "cc" end
     if SkywardDB.markTag == nil then SkywardDB.markTag = "[Skyborne]" end
     if SkywardDB.showTag == nil then SkywardDB.showTag = true end
-    if SkywardDB.dimWholeLine == nil then SkywardDB.dimWholeLine = true end
 
     self.db = SkywardDB
 end
@@ -126,14 +124,13 @@ function Skyward:GetFilteredChannelCount()
     return active, total
 end
 
--- Marking Style & Appearance State Helpers
+-- Marking Style & Character Name Coloring Helpers
 function Skyward:GetMarkColorCode()
     local color = (self.db and self.db.markColor) or "777b80"
     if color == "REGULAR" then
         return nil
     end
-    local opacity = (self.db and self.db.markOpacity) or "cc"
-    return "|c" .. opacity .. color
+    return "|cff" .. color
 end
 
 function Skyward:IsTagEnabled()
@@ -165,22 +162,6 @@ function Skyward:SetMarkColor(hex)
     self.db.markColor = hex or "777b80"
 end
 
-function Skyward:SetMarkOpacity(alphaHex)
-    if not self.db then return end
-    self.db.markOpacity = alphaHex or "cc"
-end
-
-function Skyward:IsDimWholeLine()
-    if not self.db or self.db.dimWholeLine == nil then
-        return true
-    end
-    return self.db.dimWholeLine == true
-end
-
-function Skyward:SetDimWholeLine(enabled)
-    if not self.db then return end
-    self.db.dimWholeLine = enabled and true or false
-end
 
 
 -- Get current filter mode ("OFF", "MARKED", "HIDE")

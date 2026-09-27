@@ -42,7 +42,6 @@ end
 function Skyward:FormatMarkedMessage(msg)
     if not msg then return msg end
 
-    local dimColor = self:GetMarkColorCode()
     local showTag = self:IsTagEnabled()
     local customTag = self:GetMarkTag()
     local tag = ""
@@ -50,40 +49,32 @@ function Skyward:FormatMarkedMessage(msg)
         tag = customTag .. " "
     end
 
-    local formatted = ""
-    if dimColor then
-        -- Preserve clickable links by ensuring resets return to our dim color
-        local dimmedMsg = msg:gsub("|r", "|r" .. dimColor)
-        formatted = tag .. dimColor .. dimmedMsg .. "|r"
-    else
-        -- Regular text color
-        formatted = tag .. msg
-    end
-
-    -- Include invisible marker tag so AddMessage hook knows to recolor the entire line if enabled
-    return SKYWARD_MARKER .. formatted
+    -- Prepend invisible marker so AddMessage hook knows to recolor the character name
+    return SKYWARD_MARKER .. tag .. msg
 end
 
--- Helper to recolor an entire chat line (including channel name and sender)
-local function RecolorWholeLine(text, dimColor)
+-- Helper to recolor the player's name (replacing class color with chosen color)
+local function RecolorPlayerName(text, nameColor)
     if not text then return text end
     -- Remove the invisible detection marker
-    local clean = text:gsub("|c00010203|r", "")
+    local clean = text:gsub(SKYWARD_MARKER, "")
 
-    -- If Regular text color is selected, don't recolor the line
-    if not dimColor then
+    -- If Regular text color is selected or no color, keep default class colors
+    if not nameColor or nameColor == "REGULAR" then
         return clean
     end
 
-    -- Replace all 8-digit color codes (|caarrggbb) with our chosen dimColor.
-    -- Crucial: ONLY match exact 8 hex digits once to avoid substring re-matching bugs.
-    local recolored = clean:gsub("|c%x%x%x%x%x%x%x%x", dimColor)
-    -- Replace internal color resets so they maintain the dim color
-    recolored = recolored:gsub("|r", dimColor)
-    return recolored .. "|r"
+    local colorCode = "|cff" .. nameColor
+    -- If player hyperlink is preceded by a class color code, replace that code
+    local recolored, count = clean:gsub("(|c%x%x%x%x%x%x%x%x)(|Hplayer:[^|]+|h%[[^%]]+%]%h)", colorCode .. "%2")
+    if count == 0 then
+        -- If no color code preceded the player hyperlink, wrap it
+        recolored = clean:gsub("(|Hplayer:[^|]+|h%[[^%]]+%]%h)", colorCode .. "%1|r")
+    end
+    return recolored
 end
 
--- Hook a ChatFrame's AddMessage method for whole-line styling
+-- Hook a ChatFrame's AddMessage method for character name styling
 local function HookChatFrame(frame)
     if not frame or frame.SkywardHooked then return end
     frame.SkywardHooked = true
@@ -91,13 +82,8 @@ local function HookChatFrame(frame)
     local origAddMessage = frame.AddMessage
     frame.AddMessage = function(self, text, r, g, b, id, ...)
         if text and type(text) == "string" and text:find(SKYWARD_MARKER, 1, true) then
-            if Skyward:IsDimWholeLine() then
-                local dimColor = Skyward:GetMarkColorCode()
-                text = RecolorWholeLine(text, dimColor)
-            else
-                -- Just strip the marker
-                text = text:gsub(SKYWARD_MARKER, "")
-            end
+            local nameColor = Skyward.db and Skyward.db.markColor
+            text = RecolorPlayerName(text, nameColor)
         end
         return origAddMessage(self, text, r, g, b, id, ...)
     end

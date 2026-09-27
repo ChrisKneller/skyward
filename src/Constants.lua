@@ -54,10 +54,10 @@ Skyward.CHANNEL_DEFINITIONS = {
     { key = "SAY",          name = "Say (/say)",       desc = "Local proximity speech" },
     { key = "YELL",         name = "Yell (/yell)",     desc = "Wide proximity shout" },
     { key = "EMOTE",        name = "Emotes (/emote)",  desc = "Player text emotes (/emote, /me)" },
-    { key = "CUSTOM",       name = "Custom / Other",   desc = "Player-created or custom channels (e.g., /join world)" },
+    { key = "CUSTOM",       name = "Custom",           desc = "Player-created or custom channels (e.g., /join world)" },
 }
 
--- Color presets for "Styled" mode
+-- Character name color presets for "Styled" mode
 Skyward.MARK_COLOR_PRESETS = {
     { id = "REGULAR", label = "Regular",    hex = "REGULAR" },
     { id = "GREY",    label = "Muted Grey", hex = "777b80" },
@@ -67,24 +67,12 @@ Skyward.MARK_COLOR_PRESETS = {
     { id = "ASH",     label = "Ash Grey",   hex = "8c8c8c" },
 }
 
--- Opacity presets
-Skyward.OPACITY_PRESETS = {
-    { label = "100%", alphaHex = "ff" },
-    { label = "80%",  alphaHex = "cc" },
-    { label = "60%",  alphaHex = "99" },
-    { label = "40%",  alphaHex = "66" },
-    { label = "20%",  alphaHex = "33" },
-    { label = "5%",   alphaHex = "0d" },
-}
-
 -- Default SavedVariables
 Skyward.DEFAULT_SETTINGS = {
     mode = Skyward.MODES.OFF,     -- Default to OFF as requested ("default off")
     markColor = "777b80",         -- 6-hex color code or "REGULAR"
-    markOpacity = "cc",           -- 2-hex alpha (ff = 100%, cc = 80%, 99 = 60%, 66 = 40%, 33 = 20%, 0d = 5%)
     showTag = true,               -- Toggle prefix tag on/off
     markTag = "[Skyborne]",       -- Custom prefix tag
-    dimWholeLine = true,          -- Dim entire line (including channel & player name)
     filterChannels = {
         GENERAL      = true,
         TRADE        = true,

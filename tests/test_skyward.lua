@@ -145,15 +145,11 @@ local function TestStylingOptions()
     Skyward:SetMarkColor("REGULAR")
     assert(Skyward:GetMarkColorCode() == nil, "Expected REGULAR color to return nil")
 
-    -- Test hex color with opacity
+    -- Test character name hex color
     Skyward:SetMarkColor("777b80")
-    Skyward:SetMarkOpacity("33") -- 20%
-    assert(Skyward:GetMarkColorCode() == "|c33777b80", "Expected |c33777b80")
+    assert(Skyward:GetMarkColorCode() == "|cff777b80", "Expected |cff777b80")
 
-    Skyward:SetMarkOpacity("0d") -- 5%
-    assert(Skyward:GetMarkColorCode() == "|c0d777b80", "Expected |c0d777b80")
-
-    print("StylingOptions: 5/5 passed.")
+    print("StylingOptions: 4/4 passed.")
 end
 
 -- Run tests
