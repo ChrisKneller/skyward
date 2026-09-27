@@ -153,6 +153,11 @@ coreFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "PLAYER_LOGIN" then
         RegisterGameMenuCategory()
 
+        -- Ensure chat frame and colored name hooks are active
+        if Skyward.HookAllChatFrames then
+            Skyward:HookAllChatFrames()
+        end
+
         -- Ensure registration in hash_SlashCmdList if present in the client
         if hash_SlashCmdList then
             hash_SlashCmdList["/SKYWARD"] = HandleSlashCommand

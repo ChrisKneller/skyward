@@ -66,11 +66,16 @@ local function RecolorPlayerName(text, nameColor)
 
     local colorCode = "|cff" .. nameColor
 
-    -- Blizzard formats player links as: |Hplayer:Name:lineID:CHAT_TYPE:target|h[|cffRRGGBBName|r]|h
-    -- We target the displayText inside brackets: |h[ ... ]|h and replace whatever color is inside
-    local recolored = clean:gsub("(|H[^:]*player[^:]*:[^|]+|h%[)(.-)(%]%h)", function(prefix, inner, suffix)
+    -- Blizzard formats player links as: |Hplayer:Name:...|h[|cffRRGGBBName|r]|h
+    -- We target the displayText inside the player link and replace whatever color is inside, stopping at the end of the name
+    local recolored = clean:gsub("(|H[^|]-player[^|]-|h)(.-)(|h)", function(prefix, inner, suffix)
         local cleanInner = inner:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-        return prefix .. colorCode .. cleanInner .. "|r" .. suffix
+        local cleanName = cleanInner:match("^%[(.*)%]$")
+        if cleanName then
+            return prefix .. "[" .. colorCode .. cleanName .. "|r]" .. suffix
+        else
+            return prefix .. colorCode .. cleanInner .. "|r" .. suffix
+        end
     end)
 
     return recolored
@@ -91,8 +96,30 @@ local function HookChatFrame(frame)
     end
 end
 
+-- Hook Blizzard's GetColoredName to directly color Skyborne character names in chat
+function Skyward:HookColoredName()
+    if GetColoredName and not self.GetColoredNameHooked then
+        self.GetColoredNameHooked = true
+        local origGetColoredName = GetColoredName
+        GetColoredName = function(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
+            if Skyward and Skyward.GetMode and Skyward:GetMode() == Skyward.MODES.MARKED then
+                local isSkyborne = Skyward:IsAuthorSkyborne(arg12, arg2)
+                if isSkyborne and not Skyward:IsWhitelisted(arg2) then
+                    local nameColor = Skyward:GetMarkColorCode()
+                    if nameColor and arg2 then
+                        return nameColor .. arg2 .. "|r"
+                    end
+                end
+            end
+            return origGetColoredName(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
+        end
+    end
+end
+
 -- Hook all existing and future chat windows
 function Skyward:HookAllChatFrames()
+    self:HookColoredName()
+
     for i = 1, NUM_CHAT_WINDOWS or 10 do
         local frame = _G["ChatFrame" .. i]
         if frame then

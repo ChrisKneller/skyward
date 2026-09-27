@@ -144,8 +144,8 @@ local function UpdateLivePreview()
     local sampleMsg = "Does anyone know if the Rune Broker is in forever?"
     local tagStr = (showTag and tag and tag ~= "") and (tag .. " ") or ""
 
-    local channelPart = "|cffff8040[2. Trade - English]|r"
-    local authorPart = nameColor and (nameColor .. "[Moon Ray]|r") or "|cffff7c0a[Moon Ray]|r"
+    local channelPart = "|cffaaaaaa[2. Trade - English]|r"
+    local authorPart = nameColor and ("[" .. nameColor .. "Moon Ray|r]") or "[Moon Ray]"
     local msgPart = tagStr .. sampleMsg
 
     previewText:SetText(("%s %s: %s"):format(channelPart, authorPart, msgPart))
