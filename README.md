@@ -2,23 +2,23 @@
 
 **Skyward** is an addon for *World of Warcraft Forever* (Classic Beta client) designed to filter, style, and shield against interactions with the newly introduced **Skyborne** race.
 
-Current Release: **v0.1.0 (Beta Testing Release)**
+Current Release: **v0.1.1 (Beta Testing Release)**
 
 ---
 
 ## Features
 
 - **In-Game Configuration Panel (`/skyward`)**:
-  - Standalone, movable dark-themed UI window with 4 organized tabs:
+  - Standalone, movable dark-themed UI window with 4 organised tabs:
     - **General**: Fast, high-level filter mode selection (Off, Styled, Hide/Block) with clear mode descriptions.
     - **Whitelist**: Case-insensitive character exemption manager with dedicated search/add and scrollable roster.
     - **Channels**: Granular per-channel filter toggles (General, Trade, Services, LookingForGroup, LocalDefense, Say, Yell, Emotes, Custom).
-    - **Styling**: Customizable prefix tags (e.g., `[Skyborne]`) and character name color replacement with live in-game preview.
-- **Dynamic "Channel" Color Matching**:
-  - Allows replacing the Skyborne player's class color with the exact font color configured in your WoW Chat Settings for that channel (e.g. Trade pink/peach).
+    - **Styling**: Customisable prefix tags (e.g., `[Skyborne]`) and character name colour replacement with live in-game preview.
+- **Dynamic "Channel" Colour Matching**:
+  - Allows replacing the Skyborne player's class colour with the exact font colour configured in your WoW Chat Settings for that channel (e.g. Trade pink/peach).
 - **Public Chat Filter Engine**:
   - **Off (Normal)**: Skyward is idle; all messages appear unmodified.
-  - **Styled**: Messages from Skyborne players are marked with custom prefix tags and/or character name recoloring while preserving normal chat readability.
+  - **Styled**: Messages from Skyborne players are marked with custom prefix tags and/or character name recolouring while preserving normal chat readability.
   - **Hide (Block)**: Completely suppresses public chat messages sent by Skyborne players.
 - **Race Detection & GUID Cache**:
   - Automatically identifies character race via GUIDs (`GetPlayerInfoByGUID`).
@@ -33,7 +33,7 @@ If you are not using an AddOn manager like CurseForge or WowUp, follow these ste
 
 1. **Download the AddOn**:
    - Go to the [Releases](https://github.com/ChrisKneller/skyward/releases) page on GitHub.
-   - Download the latest `Skyward-v0.1.0.zip` release file.
+   - Download the latest `Skyward-v0.1.1.zip` release file.
 
 2. **Locate your World of Warcraft AddOns Folder**:
    - **WoW Forever / Classic Beta**:
@@ -50,7 +50,7 @@ If you are not using an AddOn manager like CurseForge or WowUp, follow these ste
      ```
 
 3. **Extract the ZIP**:
-   - Extract the contents of `Skyward-v0.1.0.zip` directly into your `Interface\AddOns\` directory.
+   - Extract the contents of `Skyward-v0.1.1.zip` directly into your `Interface\AddOns\` directory.
    - **Important**: Make sure the final folder structure is:
      ```text
      Interface\AddOns\Skyward\Skyward.toc

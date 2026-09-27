@@ -5,7 +5,7 @@
 
 local ADDON_NAME, Skyward = ...
 
-Skyward.VERSION = "0.1.0"
+Skyward.VERSION = "0.1.1"
 Skyward.TITLE = "Skyward"
 Skyward.INTERFACE = "110100"
 
@@ -32,7 +32,7 @@ Skyward.PUBLIC_CHAT_EVENTS = {
     "CHAT_MSG_TEXT_EMOTE", -- Public /emote
 }
 
--- UI Color Palette (Hex & RGB)
+-- UI Colour Palette (Hex & RGB)
 Skyward.COLORS = {
     PRIMARY       = "|cff00b4d8", -- Skyward Cyan
     ACCENT        = "|cff90e0ef", -- Light Blue
@@ -57,7 +57,7 @@ Skyward.CHANNEL_DEFINITIONS = {
     { key = "CUSTOM",       name = "Custom",           desc = "Player-created or custom channels (e.g., /join world)" },
 }
 
--- Character name color presets for "Styled" mode
+-- Character name colour presets for "Styled" mode
 Skyward.MARK_COLOR_PRESETS = {
     { id = "CHANNEL", label = "Channel",    hex = "CHANNEL" },
     { id = "GREY",    label = "Muted Grey", hex = "777b80" },
@@ -70,7 +70,7 @@ Skyward.MARK_COLOR_PRESETS = {
 -- Default SavedVariables
 Skyward.DEFAULT_SETTINGS = {
     mode = Skyward.MODES.OFF,     -- Default to OFF as requested ("default off")
-    replaceNameColor = true,      -- Toggle whether character name class color is replaced
+    replaceNameColor = true,      -- Toggle whether character name class colour is replaced
     markColor = "777b80",         -- 6-hex color code or "CHANNEL"
     showTag = true,               -- Toggle prefix tag on/off
     markTag = "[Skyborne]",       -- Custom prefix tag

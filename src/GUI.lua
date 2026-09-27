@@ -394,8 +394,8 @@ function GUI:CreateMainFrame()
     cardDesc:SetPoint("RIGHT", infoCard, "RIGHT", -12, 0)
     cardDesc:SetJustifyH("LEFT")
     cardDesc:SetText(
-        "|cffffd100Off (Normal)|r:\nSkyward is idle. All messages and class colors appear normally.\n\n" ..
-        "|cff00b4d8Styled|r:\nMessages from Skyborne players are styled with a prefix tag and/or custom name color (configured in the Styling tab).\n\n" ..
+        "|cffffd100Off (Normal)|r:\nSkyward is idle. All messages and class colours appear normally.\n\n" ..
+        "|cff00b4d8Styled|r:\nMessages from Skyborne players are styled with a prefix tag and/or custom name colour (configured in the Styling tab).\n\n" ..
         "|cffff4d4dHide (Block)|r:\nCompletely suppresses public chat messages sent by Skyborne players."
     )
 
@@ -426,7 +426,7 @@ function GUI:CreateMainFrame()
 
     local inputPrompt = nameInput:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     inputPrompt:SetPoint("LEFT", nameInput, "LEFT", 6, 0)
-    inputPrompt:SetText("Firstname Lastname or Name-Realm...")
+    inputPrompt:SetText("Firstname Lastname...")
 
     nameInput:SetScript("OnTextChanged", function(self)
         if self:GetText() == "" then
@@ -557,7 +557,7 @@ function GUI:CreateMainFrame()
 
     local stSub = tabStyling:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     stSub:SetPoint("TOPLEFT", stHeader, "BOTTOMLEFT", 0, -3)
-    stSub:SetText("Customize character name color and prefix tags for Skyborne players.")
+    stSub:SetText("Customise character name colour and prefix tags for Skyborne players.")
 
     -- 1. Prefix Tag Toggle & Input Box
     tagCheckbox = CreateCheckbox(tabStyling, "Add Prefix Tag:", "Toggle whether a prefix tag is added before Skyborne messages.", function(isChecked)
@@ -578,7 +578,7 @@ function GUI:CreateMainFrame()
     end)
 
     -- 2. Character Name Color Theme (2 rows of 3 buttons)
-    nameColorCheckbox = CreateCheckbox(tabStyling, "Replace Character Name Colour", "Toggle whether the character's class color is replaced for Skyborne players.", function(isChecked)
+    nameColorCheckbox = CreateCheckbox(tabStyling, "Replace Character Name Colour", "Toggle whether the character's class colour is replaced for Skyborne players.", function(isChecked)
         Skyward:SetReplaceNameColor(isChecked)
         Skyward:UpdateGUI()
     end)
