@@ -1,0 +1,22 @@
+# OS Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor & IDE Directories
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# WoW Test / Client artifacts
+WTF/
+Screenshots/
+Errors/
+Logs/
+
+# Temporary and backup files
+*.bak
+*.swp
+*~
+*.tmp

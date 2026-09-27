@@ -1,0 +1,14 @@
+## Interface: 110100
+## Title: |cff00b4d8Skyward|r
+## Notes: Filters and mitigates interactions with the Skyborne race in World of Warcraft Forever.
+## Author: Christian Kneller
+## Version: 1.0.0
+## SavedVariables: SkywardDB
+## IconTexture: Interface\Icons\Spell_Nature_AeroShield
+
+Constants.lua
+Database.lua
+RaceDetector.lua
+ChatFilter.lua
+GUI.lua
+Core.lua
